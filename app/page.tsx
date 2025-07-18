@@ -1,103 +1,189 @@
-import Image from "next/image";
+import Navbar from "../components/Navbar";
+import PhotoSlider from "../components/PhotoSlider";
+import AnimatedLogoSection from "../components/AnimatedLogoSection";
+import ProgramsSection from "../components/ProgramsSection";
+import ReviewLecturersSection from "../components/ReviewLecturersSection";
+import TestimonialsSection from "../components/TestimonialsSection";
+import AboutCEOSection from "../components/AboutCEOSection";
+import ContactSection from "../components/ContactSection";
+import Footer from "../components/Footer";
+import CounterAnimation from "../components/CounterAnimation";
+import NewsEventsSection from "../components/NewsEventsSection";
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <Navbar />
+      <main>
+        {/* Hero Section */}
+        <PhotoSlider />
+        
+        {/* About Section with animated logo */}
+        <section className="py-20 bg-white relative overflow-hidden" id="about-intro">
+          {/* Background image with blur */}
+          <div className="absolute inset-0 w-full h-full z-0">
+            <img 
+              src="/background-image.jpg" 
+              alt="Background" 
+              className="w-full h-full object-cover blur-md scale-105" 
+              style={{ filter: 'blur(8px)' }}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+            {/* Overlay for readability */}
+            <div className="absolute inset-0 bg-white opacity-70" />
+          </div>
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+              <div className="lg:w-1/2">
+                <h2 className="text-3xl md:text-4xl font-bold mb-6 text-blue-900">Coeus Review & Training Specialist, Inc.</h2>
+                <div className="w-20 h-1 bg-blue-600 mb-6"></div>
+                <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                  We are dedicated to providing high-quality review programs and professional development seminars to help you achieve your career goals and aspirations.
+                </p>
+                <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+                  With our team of expert lecturers and comprehensive study materials, we ensure that you are well-prepared for your licensure examinations and professional growth.
+                </p>
+                <a 
+                  href="/about" 
+                  className="inline-flex items-center text-blue-700 font-medium hover:text-blue-800 transition-colors"
+                >
+                  Learn more about us
+                  <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
+              </div>
+              <div className="lg:w-1/2 flex justify-center">
+                <div className="w-full max-w-md">
+                  <AnimatedLogoSection />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Stats Section */}
+        <section className="py-16 bg-blue-900 text-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div className="p-4 transform transition-all duration-500 hover:scale-110">
+                <div className="text-4xl font-bold mb-2 flex justify-center">
+                  <CounterAnimation end={1000} suffix="+" />
+                </div>
+                <div className="text-blue-200">Students Trained</div>
+              </div>
+              <div className="p-4 transform transition-all duration-500 hover:scale-110">
+                <div className="text-4xl font-bold mb-2 flex justify-center">
+                  <CounterAnimation end={95} suffix="%" />
+                </div>
+                <div className="text-blue-200">Passing Rate</div>
+              </div>
+              <div className="p-4 transform transition-all duration-500 hover:scale-110">
+                <div className="text-4xl font-bold mb-2 flex justify-center">
+                  <CounterAnimation end={50} suffix="+" />
+                </div>
+                <div className="text-blue-200">Expert Lecturers</div>
+              </div>
+              <div className="p-4 transform transition-all duration-500 hover:scale-110">
+                <div className="text-4xl font-bold mb-2 flex justify-center">
+                  <CounterAnimation end={10} suffix="+" />
+                </div>
+                <div className="text-blue-200">Years Experience</div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Featured Story Section */}
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-blue-900 mb-4">Featured Story</h2>
+              <div className="w-24 h-1 bg-blue-600 mx-auto mb-6"></div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-blue-50 to-white rounded-xl overflow-hidden shadow-lg">
+              <div className="flex flex-col lg:flex-row">
+                <div className="lg:w-1/2">
+                  <img 
+                    src="/background-image.jpg" 
+                    alt="Featured News" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="lg:w-1/2 p-8">
+                  <div className="inline-block bg-blue-700 text-white px-3 py-1 rounded-lg mb-4">
+                    News
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-bold text-blue-900 mb-4">
+                    Coeus Celebrates 10 Years of Excellence in Professional Education
+                  </h3>
+                  <p className="text-gray-700 mb-6">
+                    This year marks a significant milestone for Coeus Review & Training Specialist, Inc. as we celebrate our 10th anniversary. Over the past decade, we have helped thousands of students achieve their professional goals through our comprehensive review programs and CPD seminars.
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center text-gray-500 text-sm">
+                      <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      June 1, 2023
+                    </div>
+                    <a 
+                      href="/news" 
+                      className="inline-flex items-center text-blue-700 font-medium hover:text-blue-800 transition-colors"
+                    >
+                      Read more
+                      <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Programs Section */}
+        <ProgramsSection />
+        
+        {/* Review Lecturers Section */}
+        <ReviewLecturersSection />
+        
+        {/* News & Events Section */}
+        <NewsEventsSection />
+        
+        {/* Testimonials Section */}
+        <TestimonialsSection />
+        
+        {/* About CEO Section */}
+        <AboutCEOSection />
+        
+        {/* CTA Section */}
+        <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Your Journey?</h2>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">Join our review programs and take the first step towards achieving your professional goals.</p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <a 
+                href="#contact" 
+                className="bg-white text-blue-700 hover:bg-blue-50 font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+              >
+                Contact Us
+              </a>
+              <a 
+                href="#programs" 
+                className="bg-transparent hover:bg-white/20 text-white border-2 border-white font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+              >
+                Explore Programs
+              </a>
+            </div>
+          </div>
+        </section>
+        
+        {/* Contact Section */}
+        <ContactSection />
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <Footer />
     </div>
   );
 }

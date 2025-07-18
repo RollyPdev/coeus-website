@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Admin user model for authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Content models for website sections
+model AboutContent {
+  id          String   @id @default(cuid())
+  vision      String
+  mission     String
+  goals       String
+  story       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Lecturer {
+  id            String   @id @default(cuid())
+  name          String
+  photo         String
+  position      String
+  credentials   String
+  bio           String
+  specialization String
+  category      String   // criminology, nursing, cpd
+  subjects      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model NewsEvent {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  summary   String
+  image     String
+  date      DateTime
+  category  String   // news, event
+  featured  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  text      String
+  image     String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Program {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  image       String
+  category    String   // criminology, nursing, cpd
+  features    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSettings {
+  id            String   @id @default(cuid())
+  siteName      String
+  contactEmail  String
+  contactPhone  String
+  address       String
+  socialLinks   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
