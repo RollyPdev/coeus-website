@@ -1,0 +1,6 @@
+[build]
+  command = "npx prisma generate --accelerate && next build"
+  publish = ".next"
+
+[build.environment]
+  PRISMA_SKIP_POSTINSTALL_GENERATE = "true"

@@ -3,7 +3,7 @@ import React from 'react';
 const programs = [
   {
     title: 'Criminologist Licensure Review',
-    image: '/criminology.jpg',
+    image: '/learning-1.jpg',
     description: 'Comprehensive review program designed to prepare aspiring criminologists for the licensure examination with expert-led sessions and practice tests.',
     features: ['Expert Lecturers', 'Mock Exams', 'Study Materials', 'Small Class Size']
   },

@@ -24,7 +24,7 @@ const CriminologySection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           <div className="rounded-xl overflow-hidden shadow-lg">
             <img 
-              src="/criminology.jpg" 
+              src="/learning-1.jpg" 
               alt="Criminology Review" 
               className="w-full h-64 object-cover"
             />

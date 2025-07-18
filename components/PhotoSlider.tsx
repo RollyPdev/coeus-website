@@ -10,17 +10,17 @@ const sliderImages = [
     subtitle: 'With our comprehensive review programs',
   },
   {
-    url: '/background-image.jpg',
+    url: '/image-1.jpg',
     title: 'Expert Lecturers',
     subtitle: 'Learn from industry professionals',
   },
   {
-    url: '/background-image.jpg',
+    url: '/image-2.jpg',
     title: 'Modern Facilities',
     subtitle: 'Conducive learning environment',
   },
   {
-    url: '/background-image.jpg',
+    url: '/image-3.jpg',
     title: 'Proven Results',
     subtitle: 'High passing rates in licensure exams',
   },
