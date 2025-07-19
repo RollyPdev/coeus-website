@@ -76,6 +76,10 @@ model Program {
   image       String
   category    String   // criminology, nursing, cpd
   features    String
+  duration    Int      // in weeks
+  price       Float
+  schedule    String?
+  enrollments Enrollment[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -89,4 +93,91 @@ model SiteSettings {
   socialLinks   String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Student {
+  id                  String   @id @default(cuid())
+  studentId           String   @unique
+  firstName           String
+  lastName            String
+  middleInitial       String?
+  gender              String
+  birthday            DateTime
+  birthPlace          String
+  contactNumber       String
+  email               String
+  address             String
+  guardianFirstName   String
+  guardianLastName    String
+  guardianMiddleInitial String?
+  guardianContact     String
+  guardianAddress     String
+  photoUrl            String?
+  status              String   @default("active") // active, inactive, graduated
+  enrollments         Enrollment[]
+  attendances         Attendance[]
+  examResults         ExamResult[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Enrollment {
+  id                  String   @id @default(cuid())
+  enrollmentId        String   @unique
+  student             Student  @relation(fields: [studentId], references: [id])
+  studentId           String
+  reviewType          String
+  program             Program? @relation(fields: [programId], references: [id])
+  programId           String?
+  batch               String?
+  startDate           DateTime
+  endDate             DateTime?
+  paymentMethod       String
+  amount              Float
+  paymentStatus       String   @default("pending") // pending, partial, paid
+  status              String   @default("pending") // pending, verified, completed
+  payments            Payment[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Attendance {
+  id                  String   @id @default(cuid())
+  student             Student  @relation(fields: [studentId], references: [id])
+  studentId           String
+  date                DateTime
+  status              String   // present, absent, late, excused
+  remarks             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model ExamResult {
+  id                  String   @id @default(cuid())
+  student             Student  @relation(fields: [studentId], references: [id])
+  studentId           String
+  examType            String   // mock exam, quiz, final exam
+  subject             String
+  score               Float
+  totalPoints         Float
+  percentage          Float
+  remarks             String?
+  examDate            DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Payment {
+  id                  String   @id @default(cuid())
+  transactionId       String   @unique
+  enrollment          Enrollment @relation(fields: [enrollmentId], references: [id])
+  enrollmentId        String
+  amount              Float
+  paymentMethod       String   // cash, gcash, bank transfer, paypal
+  paymentDate         DateTime
+  receiptNumber       String?
+  status              String   // completed, pending, failed
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
