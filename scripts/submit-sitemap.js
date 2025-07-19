@@ -3,11 +3,14 @@ const https = require('https');
 // Your website URL
 const siteUrl = 'https://coeusreview.com';
 
+// Google verification ID
+const googleVerificationId = 'f8aa2903657b804d';
+
 // Search engine sitemap submission URLs
 const searchEngines = [
   {
     name: 'Google',
-    url: `https://www.google.com/ping?sitemap=${siteUrl}/sitemap.xml`
+    url: `https://www.google.com/ping?sitemap=${siteUrl}/sitemap.xml&verification=${googleVerificationId}`
   },
   {
     name: 'Bing',

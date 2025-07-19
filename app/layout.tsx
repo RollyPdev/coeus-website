@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "verification_token", // Replace with your Google Search Console verification token
+    google: ["f8aa2903657b804d", "W8uVriLGV3Lf4fTpWvl3JQ-KcL3qpsEO29kLyPKDbRc"],
   },
 };
 
