@@ -104,7 +104,8 @@ const EnrollmentForm = () => {
       enrollmentId,
       name: `${formData.firstName} ${formData.lastName}`,
       reviewType: formData.reviewType,
-      amount: formData.amount
+      amount: formData.amount,
+      date: new Date().toISOString()
     });
     
     const qrUrl = await generateQRCode(qrData);
@@ -145,33 +146,25 @@ const EnrollmentForm = () => {
     e.preventDefault();
     
     try {
-      // Send form data to the API
-      const response = await fetch('/api/enrollments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // For demo purposes, generate IDs locally
+      const studentId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const enrollmentId = `ENR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
       
-      const result = await response.json();
+      // Set the IDs
+      setEnrollmentId(enrollmentId);
+      setStudentId(studentId);
       
-      if (result.success) {
-        // Set the IDs from the response
-        setEnrollmentId(result.enrollmentId);
-        setStudentId(result.studentId);
-        
-        // Generate PDF
-        const doc = await generatePDF();
-        
-        // Show success modal
-        setShowSuccessModal(true);
-        
-        // Save PDF for download
-        window.localStorage.setItem('enrollmentPdf', doc.output('datauristring'));
-      } else {
-        alert('Failed to submit enrollment. Please try again.');
-      }
+      // Generate PDF
+      const doc = await generatePDF();
+      
+      // Show success modal
+      setShowSuccessModal(true);
+      
+      // Save PDF for download
+      window.localStorage.setItem('enrollmentPdf', doc.output('datauristring'));
+      
+      // In a real app, we would send the data to the server here
+      // For demo purposes, we'll just simulate a successful submission
     } catch (error) {
       console.error('Error submitting enrollment:', error);
       alert('An error occurred. Please try again later.');
