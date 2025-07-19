@@ -1,6 +1,6 @@
 export const newsEvents = [
   {
-    id: "1",
+    id: 1,
     title: "Coeus Achieves 95% Passing Rate in Recent Criminology Board Exam",
     date: "2023-05-15",
     category: "news",
@@ -10,7 +10,7 @@ export const newsEvents = [
     featured: true
   },
   {
-    id: "2",
+    id: 2,
     title: "Open House: Explore Our New Training Facilities",
     date: "2023-06-10",
     category: "event",
@@ -20,7 +20,7 @@ export const newsEvents = [
     featured: false
   },
   {
-    id: "3",
+    id: 3,
     title: "Coeus Partners with International Training Institute",
     date: "2023-04-28",
     category: "news",
@@ -30,7 +30,7 @@ export const newsEvents = [
     featured: false
   },
   {
-    id: "4",
+    id: 4,
     title: "Career Fair: Connect with Top Employers",
     date: "2023-07-05",
     category: "event",
@@ -40,7 +40,7 @@ export const newsEvents = [
     featured: false
   },
   {
-    id: "5",
+    id: 5,
     title: "New Online Review Platform Launched",
     date: "2023-03-12",
     category: "news",
@@ -50,7 +50,7 @@ export const newsEvents = [
     featured: false
   },
   {
-    id: "6",
+    id: 6,
     title: "Alumni Homecoming: Celebrating Success",
     date: "2023-08-20",
     category: "event",
