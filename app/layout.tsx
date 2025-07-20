@@ -16,6 +16,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  icons: {
+    icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/logo.png', sizes: '32x32' }],
+    apple: [{ url: '/logo.png' }],
+    shortcut: [{ url: '/logo.png' }],
+  },
+  manifest: '/manifest.json',
   title: "Coeus Review & Training Specialist, Inc. | Premier Review Center in Roxas City",
   description: "Coeus Review & Training Specialist, Inc. is the leading review center in Roxas City offering professional review programs for Criminology and Nursing licensure examinations, and CPD seminars for all licensed professionals.",
   keywords: ["review center", "criminology review", "nursing review", "CPD seminars", "licensure exam", "professional development", "Roxas City", "Capiz", "board exam", "review programs"],
@@ -67,6 +73,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+      </head>
       <body
         className={`${inter.variable} antialiased`}
       >

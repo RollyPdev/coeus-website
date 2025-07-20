@@ -64,7 +64,6 @@ interface FormData {
   amount: string;
   agreeToTerms: boolean;
 }
-
 const EnrollmentForm = () => {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -124,68 +123,191 @@ const EnrollmentForm = () => {
     municipalities: false,
     barangays: false
   });
-
+  // Default regions in case API fails
+  const defaultRegionData = [
+    { code: 'NCR', name: 'National Capital Region' },
+    { code: 'CAR', name: 'Cordillera Administrative Region' },
+    { code: 'R1', name: 'Region I: Ilocos Region' },
+    { code: 'R2', name: 'Region II: Cagayan Valley' },
+    { code: 'R3', name: 'Region III: Central Luzon' },
+    { code: 'R4A', name: 'Region IV-A: CALABARZON' },
+    { code: 'R4B', name: 'Region IV-B: MIMAROPA' },
+    { code: 'R5', name: 'Region V: Bicol Region' },
+    { code: 'R6', name: 'Region VI: Western Visayas' },
+    { code: 'R7', name: 'Region VII: Central Visayas' },
+    { code: 'R8', name: 'Region VIII: Eastern Visayas' },
+    { code: 'R9', name: 'Region IX: Zamboanga Peninsula' },
+    { code: 'R10', name: 'Region X: Northern Mindanao' },
+    { code: 'R11', name: 'Region XI: Davao Region' },
+    { code: 'R12', name: 'Region XII: SOCCSKSARGEN' },
+    { code: 'R13', name: 'Region XIII: Caraga' },
+    { code: 'BARMM', name: 'Bangsamoro Autonomous Region in Muslim Mindanao' }
+  ];
+  
   // Fetch regions on component mount
   useEffect(() => {
     fetchRegions();
   }, []);
-
-  // Fetch regions
+  
+  // Fetch regions from PSGC Cloud API
   const fetchRegions = async () => {
     try {
       setLoading(prev => ({ ...prev, regions: true }));
-      const response = await fetch('https://psgc.vercel.app/api/region');
+      const response = await fetch('https://psgc.cloud/api/regions');
       const data = await response.json();
-      setRegions(data);
+      if (Array.isArray(data)) {
+        setRegions(data.map(region => ({
+          code: region.code,
+          name: region.name
+        })));
+      } else {
+        setRegions(defaultRegionData);
+      }
     } catch (error) {
       console.error('Error fetching regions:', error);
+      setRegions(defaultRegionData);
     } finally {
       setLoading(prev => ({ ...prev, regions: false }));
     }
   };
 
-  // Fetch provinces based on selected region
+  // Default provinces for common regions
+  const defaultProvinceData = {
+    'NCR': [
+      { code: 'PH133900000', name: 'Metro Manila', regionCode: 'NCR' }
+    ],
+    'R6': [
+      { code: 'PH060400000', name: 'Capiz', regionCode: 'R6' },
+      { code: 'PH060500000', name: 'Iloilo', regionCode: 'R6' },
+      { code: 'PH060600000', name: 'Negros Occidental', regionCode: 'R6' },
+      { code: 'PH060200000', name: 'Antique', regionCode: 'R6' },
+      { code: 'PH060300000', name: 'Aklan', regionCode: 'R6' },
+      { code: 'PH061900000', name: 'Guimaras', regionCode: 'R6' }
+    ]
+  };
+  
+  // Fetch provinces from PSGC Cloud API
   const fetchProvinces = async (regionCode: string) => {
+    setLoading(prev => ({ ...prev, provinces: true }));
     try {
-      setLoading(prev => ({ ...prev, provinces: true }));
-      const response = await fetch(`https://psgc.vercel.app/api/region/${regionCode}/province`);
+      // Try to get provinces from API
+      const response = await fetch(`https://psgc.cloud/api/regions/${regionCode}/provinces`);
       const data = await response.json();
-      setProvinces(data);
+      
+      if (Array.isArray(data)) {
+        setProvinces(data.map(province => ({
+          code: province.code,
+          name: province.name,
+          regionCode: regionCode
+        })));
+      } else {
+        // Fallback to default data if available
+        const defaultProvinces = defaultProvinceData[regionCode as keyof typeof defaultProvinceData] || [];
+        setProvinces(defaultProvinces);
+      }
     } catch (error) {
       console.error('Error fetching provinces:', error);
+      // Fallback to default data if available
+      const defaultProvinces = defaultProvinceData[regionCode as keyof typeof defaultProvinceData] || [];
+      setProvinces(defaultProvinces);
     } finally {
       setLoading(prev => ({ ...prev, provinces: false }));
     }
   };
 
-  // Fetch municipalities based on selected province
+  // Default municipalities for common provinces
+  const defaultMunicipalityData = {
+    'PH060400000': [
+      { code: 'PH060401000', name: 'Roxas City', provinceCode: 'PH060400000' },
+      { code: 'PH060402000', name: 'Cuartero', provinceCode: 'PH060400000' },
+      { code: 'PH060403000', name: 'Dao', provinceCode: 'PH060400000' },
+      { code: 'PH060404000', name: 'Dumalag', provinceCode: 'PH060400000' },
+      { code: 'PH060405000', name: 'Dumarao', provinceCode: 'PH060400000' },
+      { code: 'PH060406000', name: 'Ivisan', provinceCode: 'PH060400000' },
+      { code: 'PH060407000', name: 'Jamindan', provinceCode: 'PH060400000' },
+      { code: 'PH060408000', name: 'Ma-ayon', provinceCode: 'PH060400000' },
+      { code: 'PH060409000', name: 'Mambusao', provinceCode: 'PH060400000' },
+      { code: 'PH060410000', name: 'Panay', provinceCode: 'PH060400000' },
+      { code: 'PH060411000', name: 'Panitan', provinceCode: 'PH060400000' },
+      { code: 'PH060412000', name: 'Pilar', provinceCode: 'PH060400000' },
+      { code: 'PH060413000', name: 'Pontevedra', provinceCode: 'PH060400000' },
+      { code: 'PH060414000', name: 'President Roxas', provinceCode: 'PH060400000' },
+      { code: 'PH060415000', name: 'Sapian', provinceCode: 'PH060400000' },
+      { code: 'PH060416000', name: 'Sigma', provinceCode: 'PH060400000' },
+      { code: 'PH060417000', name: 'Tapaz', provinceCode: 'PH060400000' }
+    ]
+  };
+  
+  // Fetch municipalities from PSGC Cloud API
   const fetchMunicipalities = async (provinceCode: string) => {
+    setLoading(prev => ({ ...prev, municipalities: true }));
     try {
-      setLoading(prev => ({ ...prev, municipalities: true }));
-      const response = await fetch(`https://psgc.vercel.app/api/province/${provinceCode}/municipality`);
+      // Try to get municipalities from API
+      const response = await fetch(`https://psgc.cloud/api/provinces/${provinceCode}/cities-municipalities`);
       const data = await response.json();
-      setMunicipalities(data);
+      
+      if (Array.isArray(data)) {
+        setMunicipalities(data.map(municipality => ({
+          code: municipality.code,
+          name: municipality.name,
+          provinceCode: provinceCode
+        })));
+      } else {
+        // Fallback to default data if available
+        const defaultMunicipalities = defaultMunicipalityData[provinceCode as keyof typeof defaultMunicipalityData] || [];
+        setMunicipalities(defaultMunicipalities);
+      }
     } catch (error) {
       console.error('Error fetching municipalities:', error);
+      // Fallback to default data if available
+      const defaultMunicipalities = defaultMunicipalityData[provinceCode as keyof typeof defaultMunicipalityData] || [];
+      setMunicipalities(defaultMunicipalities);
     } finally {
       setLoading(prev => ({ ...prev, municipalities: false }));
     }
   };
 
-  // Fetch barangays based on selected municipality
+  // Default barangays for Roxas City
+  const defaultBarangayData = {
+    'PH060401000': [
+      { code: 'PH060401001', name: 'Balijuagan', municipalityCode: 'PH060401000' },
+      { code: 'PH060401002', name: 'Banica', municipalityCode: 'PH060401000' },
+      { code: 'PH060401003', name: 'Bolo', municipalityCode: 'PH060401000' },
+      { code: 'PH060401004', name: 'Culajao', municipalityCode: 'PH060401000' },
+      { code: 'PH060401005', name: 'Punta Tabuc', municipalityCode: 'PH060401000' },
+      { code: 'PH060401006', name: 'Tiza', municipalityCode: 'PH060401000' },
+      { code: 'PH060401007', name: 'Baybay', municipalityCode: 'PH060401000' }
+    ]
+  };
+  
+  // Fetch barangays from PSGC Cloud API
   const fetchBarangays = async (municipalityCode: string) => {
+    setLoading(prev => ({ ...prev, barangays: true }));
     try {
-      setLoading(prev => ({ ...prev, barangays: true }));
-      const response = await fetch(`https://psgc.vercel.app/api/municipality/${municipalityCode}/barangay`);
+      // Try to get barangays from API
+      const response = await fetch(`https://psgc.cloud/api/cities-municipalities/${municipalityCode}/barangays`);
       const data = await response.json();
-      setBarangays(data);
+      
+      if (Array.isArray(data)) {
+        setBarangays(data.map(barangay => ({
+          code: barangay.code,
+          name: barangay.name,
+          municipalityCode: municipalityCode
+        })));
+      } else {
+        // Fallback to default data if available
+        const defaultBarangays = defaultBarangayData[municipalityCode as keyof typeof defaultBarangayData] || [];
+        setBarangays(defaultBarangays);
+      }
     } catch (error) {
       console.error('Error fetching barangays:', error);
+      // Fallback to default data if available
+      const defaultBarangays = defaultBarangayData[municipalityCode as keyof typeof defaultBarangayData] || [];
+      setBarangays(defaultBarangays);
     } finally {
       setLoading(prev => ({ ...prev, barangays: false }));
     }
   };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
@@ -217,14 +339,18 @@ const EnrollmentForm = () => {
         updates.barangayCode = '';
         updates.barangay = '';
         
-        // Fetch provinces for the selected region
+        // Get provinces for the selected region
         if (value) {
+          // Clear dependent dropdowns
+          setMunicipalities([]);
+          setBarangays([]);
+          // Fetch provinces from API
           fetchProvinces(value);
         } else {
           setProvinces([]);
+          setMunicipalities([]);
+          setBarangays([]);
         }
-        setMunicipalities([]);
-        setBarangays([]);
       }
       
       if (name === 'provinceCode') {
@@ -235,13 +361,16 @@ const EnrollmentForm = () => {
         updates.barangayCode = '';
         updates.barangay = '';
         
-        // Fetch municipalities for the selected province
+        // Get municipalities for the selected province
         if (value) {
+          // Clear barangays
+          setBarangays([]);
+          // Fetch municipalities from API
           fetchMunicipalities(value);
         } else {
           setMunicipalities([]);
+          setBarangays([]);
         }
-        setBarangays([]);
       }
       
       if (name === 'cityCode') {
@@ -250,8 +379,9 @@ const EnrollmentForm = () => {
         updates.barangayCode = '';
         updates.barangay = '';
         
-        // Fetch barangays for the selected municipality
+        // Get barangays for the selected municipality
         if (value) {
+          // Fetch barangays from API
           fetchBarangays(value);
         } else {
           setBarangays([]);
@@ -266,7 +396,6 @@ const EnrollmentForm = () => {
       setFormData(prev => ({ ...prev, ...updates }));
     }
   };
-
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -316,9 +445,6 @@ const EnrollmentForm = () => {
   const handlePrevious = () => {
     setCurrentStep(prev => prev - 1);
   };
-
-
-
   const generateReceipt = () => {
     // Create a simple receipt object
     return {
@@ -342,12 +468,12 @@ const EnrollmentForm = () => {
     }
     
     // For demo purposes, generate IDs locally
-    const studentId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const enrollmentId = `ENR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    const newStudentId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const newEnrollmentId = `ENR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     
     // Set the IDs
-    setEnrollmentId(enrollmentId);
-    setStudentId(studentId);
+    setEnrollmentId(newEnrollmentId);
+    setStudentId(newStudentId);
     
     // Generate receipt
     const receipt = generateReceipt();
@@ -358,7 +484,6 @@ const EnrollmentForm = () => {
     // Show success modal
     setShowSuccessModal(true);
   };
-
   const handlePrintReceipt = () => {
     const receiptData = window.localStorage.getItem('enrollmentReceipt');
     if (receiptData) {
@@ -807,7 +932,6 @@ const EnrollmentForm = () => {
       }
     }
   };
-
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
       <h2 className="text-2xl md:text-3xl font-bold text-blue-900 mb-4 text-center">Enrollment Form</h2>
@@ -1064,7 +1188,7 @@ const EnrollmentForm = () => {
                   disabled={loading.regions}
                 >
                   <option value="">Select Region</option>
-                  {regions.map(region => (
+                  {Array.isArray(regions) && regions.map(region => (
                     <option key={region.code} value={region.code}>{region.name}</option>
                   ))}
                 </select>
@@ -1085,7 +1209,7 @@ const EnrollmentForm = () => {
                   disabled={!formData.regionCode || loading.provinces}
                 >
                   <option value="">Select Province</option>
-                  {provinces.map(province => (
+                  {Array.isArray(provinces) && provinces.map(province => (
                     <option key={province.code} value={province.code}>{province.name}</option>
                   ))}
                 </select>
@@ -1108,7 +1232,7 @@ const EnrollmentForm = () => {
                   disabled={!formData.provinceCode || loading.municipalities}
                 >
                   <option value="">Select City/Municipality</option>
-                  {municipalities.map(municipality => (
+                  {Array.isArray(municipalities) && municipalities.map(municipality => (
                     <option key={municipality.code} value={municipality.code}>{municipality.name}</option>
                   ))}
                 </select>
@@ -1129,7 +1253,7 @@ const EnrollmentForm = () => {
                   disabled={!formData.cityCode || loading.barangays}
                 >
                   <option value="">Select Barangay</option>
-                  {barangays.map(barangay => (
+                  {Array.isArray(barangays) && barangays.map(barangay => (
                     <option key={barangay.code} value={barangay.code}>{barangay.name}</option>
                   ))}
                 </select>
