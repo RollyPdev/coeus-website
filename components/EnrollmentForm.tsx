@@ -1,7 +1,30 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface Region {
+  code: string;
+  name: string;
+}
+
+interface Province {
+  code: string;
+  name: string;
+  regionCode: string;
+}
+
+interface Municipality {
+  code: string;
+  name: string;
+  provinceCode: string;
+}
+
+interface Barangay {
+  code: string;
+  name: string;
+  municipalityCode: string;
+}
 
 interface FormData {
   reviewType: string;
@@ -15,8 +38,14 @@ interface FormData {
   contactNumber: string;
   email: string;
   address: string;
+  region: string;
+  regionCode: string;
   province: string;
+  provinceCode: string;
   city: string;
+  cityCode: string;
+  barangay: string;
+  barangayCode: string;
   zipCode: string;
   course: string;
   schoolName: string;
@@ -58,8 +87,14 @@ const EnrollmentForm = () => {
     contactNumber: '',
     email: '',
     address: '',
+    region: '',
+    regionCode: '',
     province: '',
+    provinceCode: '',
     city: '',
+    cityCode: '',
+    barangay: '',
+    barangayCode: '',
     zipCode: '',
     course: '',
     schoolName: '',
@@ -78,6 +113,78 @@ const EnrollmentForm = () => {
     amount: '',
     agreeToTerms: false
   });
+  
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
+  const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [loading, setLoading] = useState({
+    regions: false,
+    provinces: false,
+    municipalities: false,
+    barangays: false
+  });
+
+  // Fetch regions on component mount
+  useEffect(() => {
+    fetchRegions();
+  }, []);
+
+  // Fetch regions
+  const fetchRegions = async () => {
+    try {
+      setLoading(prev => ({ ...prev, regions: true }));
+      const response = await fetch('https://psgc.vercel.app/api/region');
+      const data = await response.json();
+      setRegions(data);
+    } catch (error) {
+      console.error('Error fetching regions:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, regions: false }));
+    }
+  };
+
+  // Fetch provinces based on selected region
+  const fetchProvinces = async (regionCode: string) => {
+    try {
+      setLoading(prev => ({ ...prev, provinces: true }));
+      const response = await fetch(`https://psgc.vercel.app/api/region/${regionCode}/province`);
+      const data = await response.json();
+      setProvinces(data);
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, provinces: false }));
+    }
+  };
+
+  // Fetch municipalities based on selected province
+  const fetchMunicipalities = async (provinceCode: string) => {
+    try {
+      setLoading(prev => ({ ...prev, municipalities: true }));
+      const response = await fetch(`https://psgc.vercel.app/api/province/${provinceCode}/municipality`);
+      const data = await response.json();
+      setMunicipalities(data);
+    } catch (error) {
+      console.error('Error fetching municipalities:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, municipalities: false }));
+    }
+  };
+
+  // Fetch barangays based on selected municipality
+  const fetchBarangays = async (municipalityCode: string) => {
+    try {
+      setLoading(prev => ({ ...prev, barangays: true }));
+      const response = await fetch(`https://psgc.vercel.app/api/municipality/${municipalityCode}/barangay`);
+      const data = await response.json();
+      setBarangays(data);
+    } catch (error) {
+      console.error('Error fetching barangays:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, barangays: false }));
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -97,6 +204,63 @@ const EnrollmentForm = () => {
         } else {
           updates.course = '';
         }
+      }
+      
+      // Handle location selection
+      if (name === 'regionCode') {
+        const selectedRegion = regions.find(region => region.code === value);
+        updates.region = selectedRegion?.name || '';
+        updates.provinceCode = '';
+        updates.province = '';
+        updates.cityCode = '';
+        updates.city = '';
+        updates.barangayCode = '';
+        updates.barangay = '';
+        
+        // Fetch provinces for the selected region
+        if (value) {
+          fetchProvinces(value);
+        } else {
+          setProvinces([]);
+        }
+        setMunicipalities([]);
+        setBarangays([]);
+      }
+      
+      if (name === 'provinceCode') {
+        const selectedProvince = provinces.find(province => province.code === value);
+        updates.province = selectedProvince?.name || '';
+        updates.cityCode = '';
+        updates.city = '';
+        updates.barangayCode = '';
+        updates.barangay = '';
+        
+        // Fetch municipalities for the selected province
+        if (value) {
+          fetchMunicipalities(value);
+        } else {
+          setMunicipalities([]);
+        }
+        setBarangays([]);
+      }
+      
+      if (name === 'cityCode') {
+        const selectedCity = municipalities.find(municipality => municipality.code === value);
+        updates.city = selectedCity?.name || '';
+        updates.barangayCode = '';
+        updates.barangay = '';
+        
+        // Fetch barangays for the selected municipality
+        if (value) {
+          fetchBarangays(value);
+        } else {
+          setBarangays([]);
+        }
+      }
+      
+      if (name === 'barangayCode') {
+        const selectedBarangay = barangays.find(barangay => barangay.code === value);
+        updates.barangay = selectedBarangay?.name || '';
       }
       
       setFormData(prev => ({ ...prev, ...updates }));
@@ -125,7 +289,7 @@ const EnrollmentForm = () => {
       if (!formData.reviewType || !formData.photo || !formData.firstName || !formData.lastName || 
           !formData.gender || !formData.birthday || !formData.birthPlace || 
           !formData.contactNumber || !formData.email || !formData.address || 
-          !formData.city || !formData.province || !formData.zipCode) {
+          !formData.regionCode || !formData.provinceCode || !formData.cityCode || !formData.barangayCode || !formData.zipCode) {
         canProceed = false;
         alert('Please fill in all required fields before proceeding.');
       }
@@ -483,6 +647,28 @@ const EnrollmentForm = () => {
                       <div class="item">
                         <div class="label">Gender</div>
                         <div class="value">${formData.gender}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="receipt-section">
+                    <h3>Address Information</h3>
+                    <div class="grid">
+                      <div class="item">
+                        <div class="label">Address</div>
+                        <div class="value">${formData.address}</div>
+                      </div>
+                      <div class="item">
+                        <div class="label">Barangay</div>
+                        <div class="value">${formData.barangay}</div>
+                      </div>
+                      <div class="item">
+                        <div class="label">City/Municipality</div>
+                        <div class="value">${formData.city}</div>
+                      </div>
+                      <div class="item">
+                        <div class="label">Province</div>
+                        <div class="value">${formData.province}</div>
                       </div>
                     </div>
                   </div>
@@ -863,51 +1049,107 @@ const EnrollmentForm = () => {
               ></textarea>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                  City/Municipality
+                <label htmlFor="regionCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Region <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
+                <select
+                  id="regionCode"
+                  name="regionCode"
+                  value={formData.regionCode}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   required
-                />
+                  disabled={loading.regions}
+                >
+                  <option value="">Select Region</option>
+                  {regions.map(region => (
+                    <option key={region.code} value={region.code}>{region.name}</option>
+                  ))}
+                </select>
+                {loading.regions && <p className="text-xs text-blue-500 mt-1">Loading regions...</p>}
               </div>
               
               <div>
-                <label htmlFor="province" className="block text-sm font-medium text-gray-700 mb-1">
-                  Province
+                <label htmlFor="provinceCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Province <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="province"
-                  name="province"
-                  value={formData.province}
+                <select
+                  id="provinceCode"
+                  name="provinceCode"
+                  value={formData.provinceCode}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   required
-                />
+                  disabled={!formData.regionCode || loading.provinces}
+                >
+                  <option value="">Select Province</option>
+                  {provinces.map(province => (
+                    <option key={province.code} value={province.code}>{province.name}</option>
+                  ))}
+                </select>
+                {loading.provinces && <p className="text-xs text-blue-500 mt-1">Loading provinces...</p>}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="cityCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  City/Municipality <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="cityCode"
+                  name="cityCode"
+                  value={formData.cityCode}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  required
+                  disabled={!formData.provinceCode || loading.municipalities}
+                >
+                  <option value="">Select City/Municipality</option>
+                  {municipalities.map(municipality => (
+                    <option key={municipality.code} value={municipality.code}>{municipality.name}</option>
+                  ))}
+                </select>
+                {loading.municipalities && <p className="text-xs text-blue-500 mt-1">Loading cities/municipalities...</p>}
               </div>
               
               <div>
-                <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Zip Code
+                <label htmlFor="barangayCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Barangay <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="zipCode"
-                  name="zipCode"
-                  value={formData.zipCode}
+                <select
+                  id="barangayCode"
+                  name="barangayCode"
+                  value={formData.barangayCode}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   required
-                />
+                  disabled={!formData.cityCode || loading.barangays}
+                >
+                  <option value="">Select Barangay</option>
+                  {barangays.map(barangay => (
+                    <option key={barangay.code} value={barangay.code}>{barangay.name}</option>
+                  ))}
+                </select>
+                {loading.barangays && <p className="text-xs text-blue-500 mt-1">Loading barangays...</p>}
               </div>
+            </div>
+            
+            <div>
+              <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
+                Zip Code <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="zipCode"
+                name="zipCode"
+                value={formData.zipCode}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                required
+              />
             </div>
             
             <div className="flex justify-between">
