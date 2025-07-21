@@ -1,11 +1,30 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import EnrollmentForm from '../../components/EnrollmentForm';
+import '../../styles/enrollment-styles.css';
 
 export default function EnrollPage() {
+  // Force correct background on component mount and cleanup on unmount
+  useEffect(() => {
+    const enrollContainer = document.querySelector('.enroll-page-container');
+    if (enrollContainer) {
+      (enrollContainer as HTMLElement).style.background = 'linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255))';
+    }
+    
+    // Cleanup function to reset any persistent styles
+    return () => {
+      // Remove any home page styles that might persist
+      const homeContainers = document.querySelectorAll('.home-page-container');
+      homeContainers.forEach(container => {
+        (container as HTMLElement).style.background = '';
+      });
+    };
+  }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white enroll-page-container">
+    <div className="min-h-screen enroll-page-container" style={{ background: 'linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255))' }}>
       <Navbar />
       <main className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto">

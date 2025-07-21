@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import PhotoSlider from "../components/PhotoSlider";
 import AnimatedLogoSection from "../components/AnimatedLogoSection";
@@ -9,11 +12,28 @@ import ContactSection from "../components/ContactSection";
 import Footer from "../components/Footer";
 import CounterAnimation from "../components/CounterAnimation";
 import NewsEventsSection from "../components/NewsEventsSection";
+import "../styles/enrollment-styles.css";
 
 export default function Home() {
+  // Force correct background on component mount and cleanup on unmount
+  useEffect(() => {
+    const homeContainer = document.querySelector('.home-page-container');
+    if (homeContainer) {
+      (homeContainer as HTMLElement).style.background = 'linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254))';
+    }
+    
+    // Cleanup function to reset any persistent styles
+    return () => {
+      // Remove any enrollment page styles that might persist
+      const enrollContainers = document.querySelectorAll('.enroll-page-container');
+      enrollContainers.forEach(container => {
+        (container as HTMLElement).remove();
+      });
+    };
+  }, []);
   
   return (
-    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 home-page-container">
+    <div className="font-sans min-h-screen home-page-container bg-gradient-to-br from-blue-50 to-blue-100">
       <Navbar />
       <main>
         {/* Hero Section */}

@@ -6,35 +6,35 @@ const testimonials = [
     name: 'Maria Santos', 
     role: 'Criminology Graduate',
     text: 'Coeus helped me pass my exam with flying colors! The review materials were comprehensive and the practice tests prepared me well for the actual exam.',
-    image: '/student1.jpg',
+    image: '/learning-1.jpg',
     rating: 5
   },
   { 
     name: 'Juan Dela Cruz', 
     role: 'Nursing Student',
     text: 'The lecturers are very knowledgeable and supportive. They go above and beyond to ensure we understand complex concepts.',
-    image: '/student2.jpg',
+    image: '/image-1.jpg',
     rating: 5
   },
   { 
     name: 'Ana Reyes', 
     role: 'Licensed Nurse',
     text: 'Highly recommend their review programs! I was struggling with certain topics but their specialized approach helped me overcome my challenges.',
-    image: '/student3.jpg',
+    image: '/image-2.jpg',
     rating: 4
   },
   { 
     name: 'Carlos Mendoza', 
     role: 'Criminology Student',
     text: 'The mock exams were incredibly helpful in identifying my weak areas. Thanks to Coeus, I passed on my first attempt!',
-    image: '/student4.jpg',
+    image: '/image-3.jpg',
     rating: 5
   },
   { 
     name: 'Sofia Garcia', 
     role: 'CPD Seminar Attendee',
     text: 'The professional development seminars are excellent. I gained valuable insights and practical knowledge that I apply in my daily work.',
-    image: '/student5.jpg',
+    image: '/background-image.jpg',
     rating: 5
   },
 ];

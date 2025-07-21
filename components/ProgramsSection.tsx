@@ -9,13 +9,13 @@ const programs = [
   },
   {
     title: 'Nursing Licensure Review',
-    image: '/nursing.jpg',
+    image: '/background-image.jpg',
     description: 'Intensive review program for nursing graduates featuring specialized modules covering all exam areas with hands-on clinical simulations.',
     features: ['Clinical Simulations', 'Specialized Modules', 'Exam Techniques', 'Performance Analysis']
   },
   {
     title: 'CPD Seminars',
-    image: '/cpd.jpg',
+    image: '/background-image.jpg',
     description: 'Professional development seminars for licensed professionals across various fields to earn continuing professional development units.',
     features: ['Industry Updates', 'Networking', 'Certificate', 'Flexible Schedule']
   }

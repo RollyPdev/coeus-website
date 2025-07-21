@@ -1,0 +1,29 @@
+/* Enrollment page specific styles to prevent background persistence */
+.enroll-page-container {
+  background: linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255)) !important;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure home page background is properly reset */
+.home-page-container {
+  background: linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254)) !important;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Force background reset on page transitions */
+body {
+  background: transparent !important;
+}
+
+/* Prevent CSS class persistence between pages */
+.enroll-page-container ~ * {
+  background: inherit;
+}
+
+.home-page-container ~ * {
+  background: inherit;
+}

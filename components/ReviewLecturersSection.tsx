@@ -6,28 +6,28 @@ const lecturers = {
   criminology: [
     {
       name: "Dr. James Wilson",
-      photo: "/crim-lecturer1.jpg",
+      photo: "/learning-1.jpg",
       position: "Criminal Law Expert",
       credentials: "PhD in Criminal Justice, Former Police Chief",
       subjects: ["Criminal Law", "Criminal Procedure", "Police Administration"]
     },
     {
       name: "Atty. Maria Santos",
-      photo: "/crim-lecturer2.jpg",
+      photo: "/image-1.jpg",
       position: "Legal Expert",
       credentials: "JD, LLM in Criminal Law",
       subjects: ["Criminal Jurisprudence", "Legal Medicine", "Evidence"]
     },
     {
       name: "Prof. Robert Garcia",
-      photo: "/crim-lecturer3.jpg",
+      photo: "/image-2.jpg",
       position: "Criminology Specialist",
       credentials: "MS in Criminology, Certified Forensic Investigator",
       subjects: ["Criminalistics", "Crime Detection", "Forensic Science"]
     },
     {
       name: "Col. David Tan",
-      photo: "/crim-lecturer4.jpg",
+      photo: "/image-3.jpg",
       position: "Security Management Expert",
       credentials: "BS Criminology, 25 years in Law Enforcement",
       subjects: ["Security Management", "Criminal Sociology", "Correctional Administration"]
@@ -36,28 +36,28 @@ const lecturers = {
   nursing: [
     {
       name: "Dr. Elena Cruz",
-      photo: "/nursing-lecturer1.jpg",
+      photo: "/learning-1.jpg",
       position: "Medical-Surgical Nursing Specialist",
       credentials: "PhD in Nursing, RN",
       subjects: ["Medical-Surgical Nursing", "Fundamentals of Nursing", "Nursing Research"]
     },
     {
       name: "Dr. Michael Reyes",
-      photo: "/nursing-lecturer2.jpg",
+      photo: "/image-1.jpg",
       position: "Pediatric Nursing Expert",
       credentials: "DNP, RN, Pediatric Nurse Practitioner",
       subjects: ["Pediatric Nursing", "Health Assessment", "Growth and Development"]
     },
     {
       name: "Prof. Sarah Johnson",
-      photo: "/nursing-lecturer3.jpg",
+      photo: "/image-2.jpg",
       position: "Maternal and Child Health Specialist",
       credentials: "MSN, RN, Midwife",
       subjects: ["Maternal and Child Nursing", "Obstetrics", "Family Health"]
     },
     {
       name: "Dr. Benjamin Lee",
-      photo: "/nursing-lecturer4.jpg",
+      photo: "/image-3.jpg",
       position: "Community Health Expert",
       credentials: "PhD in Public Health, RN",
       subjects: ["Community Health Nursing", "Public Health Administration", "Epidemiology"]
@@ -66,28 +66,28 @@ const lecturers = {
   cpd: [
     {
       name: "Dr. Sophia Rodriguez",
-      photo: "/cpd-speaker1.jpg",
+      photo: "/learning-1.jpg",
       position: "Professional Ethics Specialist",
       credentials: "PhD in Philosophy, Certified Ethics Trainer",
       subjects: ["Professional Ethics", "Ethical Standards", "Professional Responsibility"]
     },
     {
       name: "Engr. Carlos Mendoza",
-      photo: "/cpd-speaker2.jpg",
+      photo: "/image-1.jpg",
       position: "Engineering Management Expert",
       credentials: "MS in Engineering Management, PMP",
       subjects: ["Project Management", "Engineering Ethics", "Leadership"]
     },
     {
       name: "Dr. Amelia Tan",
-      photo: "/cpd-speaker3.jpg",
+      photo: "/image-2.jpg",
       position: "Healthcare Management Specialist",
       credentials: "PhD in Healthcare Administration, MBA",
       subjects: ["Healthcare Management", "Quality Improvement", "Patient Safety"]
     },
     {
       name: "Atty. John Santos",
-      photo: "/cpd-speaker4.jpg",
+      photo: "/image-3.jpg",
       position: "Legal and Compliance Expert",
       credentials: "JD, Certified Compliance Professional",
       subjects: ["Legal Compliance", "Risk Management", "Corporate Governance"]
