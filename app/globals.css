@@ -125,6 +125,20 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: none !important; /* Ensure no lingering gradients */
+  }
+  
+  /* Ensure page backgrounds are contained */
+  .enroll-page-container {
+    background-image: linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255)) !important;
+    background-attachment: local !important;
+    isolation: isolate !important;
+  }
+  
+  .home-page-container {
+    background-image: linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254)) !important;
+    background-attachment: local !important;
+    isolation: isolate !important;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;

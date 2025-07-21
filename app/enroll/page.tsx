@@ -5,7 +5,7 @@ import EnrollmentForm from '../../components/EnrollmentForm';
 
 export default function EnrollPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white enroll-page-container">
       <Navbar />
       <main className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto">

@@ -11,8 +11,9 @@ import CounterAnimation from "../components/CounterAnimation";
 import NewsEventsSection from "../components/NewsEventsSection";
 
 export default function Home() {
+  
   return (
-    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 home-page-container">
       <Navbar />
       <main>
         {/* Hero Section */}

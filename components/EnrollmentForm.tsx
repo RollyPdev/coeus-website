@@ -2,6 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import JsBarcode from 'jsbarcode';
+import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import '../styles/receipt-styles.css';
 
 interface Region {
   code: string;
@@ -34,6 +39,7 @@ interface FormData {
   middleInitial: string;
   gender: string;
   birthday: string;
+  age: string;
   birthPlace: string;
   contactNumber: string;
   email: string;
@@ -73,6 +79,41 @@ const EnrollmentForm = () => {
   const [enrollmentId, setEnrollmentId] = useState('');
   const [studentId, setStudentId] = useState('');
 
+  // School dropdown states
+  const [schoolSearch, setSchoolSearch] = useState('');
+  const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
+  const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
+  const [newSchoolName, setNewSchoolName] = useState('');
+  
+  // Predefined schools list
+  const predefinedSchools = [
+    'Capiz State University Main Campus - Roxas City',
+    'Capiz State University - Burias Campus (Mambusao)',
+    'Capiz State University - Dayao Campus (Roxas City)',
+    'Capiz State University - Dumarao Campus (Dumarao)',
+    'Capiz State University - Pilar Campus (Pilar)',
+    'Capiz State University - Poblacion Campus (Mambusao)',
+    'Capiz State University - Pontevedra Campus (Pontevedra)',
+    'Capiz State University - Sapian Campus (Sapian)',
+    'Capiz State University - Sigma Campus (Sigma)',
+    'Capiz State University - Tapaz Campus (Tapaz)',
+    'Colegio de la Purisima Concepcion (Roxas City)',
+    'Filamer Christian University (Roxas City)',
+    'Hercor College (Roxas City)',
+    'St. Anthony College of Roxas City, Inc. (Roxas City)',
+    'College of St. John-Roxas (Roxas City)'
+  ];
+  
+  const [customSchools, setCustomSchools] = useState<string[]>([]);
+  
+  // Combined schools list
+  const allSchools = [...predefinedSchools, ...customSchools];
+  
+  // Filtered schools based on search
+  const filteredSchools = allSchools.filter(school =>
+    school.toLowerCase().includes(schoolSearch.toLowerCase())
+  );
+
   
   const [formData, setFormData] = useState<FormData>({
     reviewType: '',
@@ -82,6 +123,7 @@ const EnrollmentForm = () => {
     middleInitial: '',
     gender: '',
     birthday: '',
+    age: '',
     birthPlace: '',
     contactNumber: '',
     email: '',
@@ -308,6 +350,9 @@ const EnrollmentForm = () => {
       setLoading(prev => ({ ...prev, barangays: false }));
     }
   };
+  // Program fee constant
+  const PROGRAM_FEE = 25000;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
@@ -325,6 +370,25 @@ const EnrollmentForm = () => {
           updates.course = 'Bachelor of Science in Criminology';
         } else {
           updates.course = '';
+        }
+      }
+      
+      // Calculate payment amount based on payment plan
+      if (name === 'paymentPlan') {
+        if (value === 'Full Payment') {
+          // 5% discount for full payment
+          const discountedAmount = PROGRAM_FEE * 0.95;
+          updates.amount = discountedAmount.toFixed(2);
+        } else if (value === 'Installment - 2 Payments') {
+          // First installment of 2 payments
+          const installmentAmount = PROGRAM_FEE / 2;
+          updates.amount = installmentAmount.toFixed(2);
+        } else if (value === 'Installment - 3 Payments') {
+          // First installment of 3 payments
+          const installmentAmount = PROGRAM_FEE / 3;
+          updates.amount = installmentAmount.toFixed(2);
+        } else {
+          updates.amount = '';
         }
       }
       
@@ -393,7 +457,56 @@ const EnrollmentForm = () => {
         updates.barangay = selectedBarangay?.name || '';
       }
       
+      // Calculate age when birthday changes
+      if (name === 'birthday' && value) {
+        const birthDate = new Date(value);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        updates.age = age.toString();
+      }
+      
       setFormData(prev => ({ ...prev, ...updates }));
+    }
+  };
+
+  // Handle school search input
+  const handleSchoolSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSchoolSearch(value);
+    setFormData(prev => ({ ...prev, schoolName: value }));
+    setShowSchoolDropdown(true);
+  };
+
+  // Handle school selection from dropdown
+  const handleSchoolSelect = (school: string) => {
+    setFormData(prev => ({ ...prev, schoolName: school }));
+    setSchoolSearch(school);
+    setShowSchoolDropdown(false);
+  };
+
+  // Handle adding new school
+  const handleAddNewSchool = () => {
+    if (newSchoolName.trim() && !allSchools.includes(newSchoolName.trim())) {
+      setCustomSchools(prev => [...prev, newSchoolName.trim()]);
+      setFormData(prev => ({ ...prev, schoolName: newSchoolName.trim() }));
+      setSchoolSearch(newSchoolName.trim());
+      setNewSchoolName('');
+      setShowAddSchoolModal(false);
+      setShowSchoolDropdown(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  const handleClickOutside = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.school-dropdown-container')) {
+      setShowSchoolDropdown(false);
     }
   };
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -457,475 +570,450 @@ const EnrollmentForm = () => {
     };
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setIsSubmitting(true);
     // Final validation for payment details
-    if (!formData.programSchedule || !formData.paymentPlan || 
-        !formData.paymentMethod || !formData.amount || !formData.agreeToTerms) {
+    if (!formData.paymentPlan || !formData.paymentMethod || 
+        !formData.amount || !formData.agreeToTerms) {
       alert('Please fill in all required fields before submitting.');
+      setIsSubmitting(false);
       return;
     }
-    
     // For demo purposes, generate IDs locally
     const newStudentId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const newEnrollmentId = `ENR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    
-    // Set the IDs
-    setEnrollmentId(newEnrollmentId);
-    setStudentId(newStudentId);
-    
-    // Generate receipt
-    const receipt = generateReceipt();
-    
+    // Build the receipt using the new IDs directly
+    const receipt = {
+      studentId: newStudentId,
+      enrollmentId: newEnrollmentId,
+      name: `${formData.firstName} ${formData.lastName}`,
+      reviewType: formData.reviewType,
+      amount: formData.amount,
+      date: new Date().toLocaleDateString()
+    };
     // Save receipt for reference
     window.localStorage.setItem('enrollmentReceipt', JSON.stringify(receipt));
-    
+    window.localStorage.setItem('enrollmentFormData', JSON.stringify(formData));
+    // Set the IDs in state for UI
+    setEnrollmentId(newEnrollmentId);
+    setStudentId(newStudentId);
     // Show success modal
     setShowSuccessModal(true);
+    setIsSubmitting(false);
   };
-  const handlePrintReceipt = () => {
+  const [barcodeDataUrl, setBarcodeDataUrl] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  // Generate barcode and QR code data URLs in real time when IDs change
+  useEffect(() => {
+    const generateImages = async () => {
+      if (studentId && enrollmentId) {
+        // Barcode
+        const barcodeCanvas = document.createElement('canvas');
+        JsBarcode(barcodeCanvas, studentId, { format: 'CODE128', width: 2, height: 40, displayValue: false });
+        setBarcodeDataUrl(barcodeCanvas.toDataURL('image/png'));
+        // QR Code
+        const qr = await QRCode.toDataURL(`${studentId}-${enrollmentId}`, { width: 128, margin: 1 });
+        setQrDataUrl(qr);
+      }
+    };
+    generateImages();
+  }, [studentId, enrollmentId]);
+  const handleDownloadPDF = async () => {
     const receiptData = window.localStorage.getItem('enrollmentReceipt');
+    const formDataData = window.localStorage.getItem('enrollmentFormData');
     if (receiptData) {
       const receipt = JSON.parse(receiptData);
-      const printWindow = window.open('', '_blank');
+      const formData = formDataData ? JSON.parse(formDataData) : {};
+      if (!receipt.studentId || !receipt.enrollmentId) {
+        // Clear invalid data and prompt user
+        window.localStorage.removeItem('enrollmentReceipt');
+        window.localStorage.removeItem('enrollmentFormData');
+        alert("Your previous receipt data was invalid or incomplete. Please re-enroll to generate a valid receipt.");
+        return;
+      }
+      
+      // Generate barcode and QR code PNGs
+      const barcodeCanvas = document.createElement('canvas');
+      JsBarcode(barcodeCanvas, receipt.studentId, { format: 'CODE128', width: 2, height: 40, displayValue: false });
+      const barcodeUrl = barcodeCanvas.toDataURL('image/png');
+      const qrUrl = await QRCode.toDataURL(`${receipt.studentId}-${receipt.enrollmentId}`, { width: 128, margin: 1 });
+
+      // Create PDF with improved design
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Set colors and styles
+      const blue = '#1e3a8a';
+      const lightBlue = '#3b82f6';
+      const gray = '#64748b';
+      const darkGray = '#1e293b';
+      const bgBlue = '#f0f7ff';
+      
+      // Add background pattern
+      pdf.setFillColor(250, 250, 252);
+      pdf.rect(0, 0, 210, 297, 'F');
+      
+      // Header with logo placeholder
+      pdf.setFillColor(blue);
+      pdf.roundedRect(0, 0, 210, 40, 0, 0, 'F');
+      
+      // Logo circle
+      pdf.setFillColor(255, 255, 255, 0.2);
+      pdf.circle(30, 20, 12, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(14);
+      pdf.text('CR', 30, 22, { align: 'center' });
+      
+      // Header text
+      pdf.setFontSize(22);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('COEUS REVIEW CENTER', 105, 20, { align: 'center' });
+      pdf.setFontSize(12);
+      pdf.text('Official Enrollment Receipt', 105, 30, { align: 'center' });
+      
+      // White card for content
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(15, 50, 180, 200, 5, 5, 'F');
+      pdf.setDrawColor(220, 220, 220);
+      pdf.roundedRect(15, 50, 180, 200, 5, 5, 'S');
+      
+      // Receipt ID section
+      pdf.setFillColor(bgBlue);
+      pdf.roundedRect(25, 60, 160, 30, 3, 3, 'F');
+      
+      pdf.setTextColor(darkGray);
+      pdf.setFontSize(14);
+      pdf.text('Enrollment Information', 105, 70, { align: 'center' });
+      
+      // Student details in a grid layout
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Student ID', 35, 80);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(receipt.studentId, 35, 85);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Enrollment ID', 105, 80);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(receipt.enrollmentId, 105, 85);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Date Enrolled', 165, 80);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(receipt.date, 165, 85);
+      
+      // Student details section
+      pdf.setFontSize(14);
+      pdf.setTextColor(darkGray);
+      pdf.text('Student Details', 105, 105, { align: 'center' });
+      
+      // Decorative line
+      pdf.setDrawColor(lightBlue);
+      pdf.setLineWidth(0.5);
+      pdf.line(65, 108, 145, 108);
+      
+      // Student info in a cleaner layout
+      pdf.setFillColor(bgBlue);
+      pdf.roundedRect(25, 115, 160, 50, 3, 3, 'F');
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Full Name', 35, 125);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(receipt.name, 35, 130);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Program Type', 35, 140);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(receipt.reviewType, 35, 145);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Contact Number', 105, 125);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(formData.contactNumber || 'N/A', 105, 130);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Email Address', 105, 140);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(formData.email || 'N/A', 105, 145);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Payment Plan', 35, 155);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(formData.paymentPlan || 'Standard Plan', 35, 160);
+      
+      // Payment section with improved styling
+      pdf.setFontSize(14);
+      pdf.setTextColor(darkGray);
+      pdf.text('Payment Details', 105, 180, { align: 'center' });
+      
+      // Decorative line
+      pdf.setDrawColor(lightBlue);
+      pdf.setLineWidth(0.5);
+      pdf.line(65, 183, 145, 183);
+      
+      // Payment box
+      pdf.setFillColor('#f0f9ff');
+      pdf.roundedRect(25, 190, 160, 40, 3, 3, 'F');
+      pdf.setDrawColor('#bfdbfe');
+      pdf.roundedRect(25, 190, 160, 40, 3, 3, 'S');
+      
+      // Payment details
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text('Initial Payment:', 35, 205);
+      pdf.setFontSize(12);
+      pdf.setTextColor(blue);
+      pdf.text(`PHP ${parseFloat(receipt.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`, 165, 205, { align: 'right' });
+      
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text('Total Program Fee:', 35, 215);
+      pdf.setFontSize(12);
+      pdf.setTextColor(blue);
+      pdf.text('PHP 25,000.00', 165, 215, { align: 'right' });
+      
+      // Codes section with better layout
+      pdf.setFillColor(bgBlue);
+      pdf.roundedRect(25, 235, 160, 35, 3, 3, 'F');
+      
+      // Barcode with container - centered
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(30, 240, 90, 25, 2, 2, 'F');
+      pdf.addImage(barcodeUrl, 'PNG', 35, 245, 80, 15);
+      
+      // Add barcode label
+      pdf.setFontSize(8);
+      pdf.setTextColor(gray);
+      pdf.text(receipt.studentId, 75, 265, { align: 'center' });
+      
+      // QR code with container - properly aligned
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(130, 240, 40, 25, 2, 2, 'F');
+      pdf.addImage(qrUrl, 'PNG', 135, 240, 30, 25);
+      
+      // Verification code - moved below the barcode/QR code section
+      pdf.setFillColor(255, 255, 255, 0.2);
+      pdf.roundedRect(55, 275, 100, 8, 4, 4, 'F');
+      pdf.setFontSize(8);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(`VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}`, 105, 280, { align: 'center' });
+      
+      // Footer with better spacing
+      pdf.setFillColor(blue);
+      pdf.rect(0, 287, 210, 20, 'F');
+      
+      // Thank you message
+      pdf.setFontSize(10);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Thank you for choosing Coeus Review & Training Specialist, Inc.', 105, 294, { align: 'center' });
+      
+      // Contact info with better spacing - using plain text instead of emojis
+      pdf.setFontSize(8);
+      pdf.text('Address: Roxas City, Capiz', 50, 300, { align: 'center' });
+      pdf.text('Phone: (036) 621-0000', 105, 300, { align: 'center' });
+      pdf.text('Email: info@coeusreview.com', 160, 300, { align: 'center' });
+      
+      // Save the PDF
+      pdf.save(`Coeus-Receipt-${receipt.studentId}.pdf`);
+      pdf.setFontSize(8);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(`VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}`, 105, 272, { align: 'center' });
+      
+      // Save the PDF
+      pdf.save(`Coeus-Receipt-${receipt.studentId}.pdf`);
+    }
+  };
+
+  const handlePrintReceipt = async () => {
+    const receiptData = window.localStorage.getItem('enrollmentReceipt');
+    const formDataData = window.localStorage.getItem('enrollmentFormData');
+    if (receiptData) {
+      const receipt = JSON.parse(receiptData);
+      const formData = formDataData ? JSON.parse(formDataData) : {};
+      if (!receipt.studentId || !receipt.enrollmentId) {
+        // Clear invalid data and prompt user
+        window.localStorage.removeItem('enrollmentReceipt');
+        window.localStorage.removeItem('enrollmentFormData');
+        alert("Your previous receipt data was invalid or incomplete. Please re-enroll to generate a valid receipt.");
+        return;
+      }
+      // Generate barcode and QR code PNGs
+      const barcodeCanvas = document.createElement('canvas');
+      JsBarcode(barcodeCanvas, receipt.studentId, { format: 'CODE128', width: 2, height: 40, displayValue: false });
+      const barcodeUrl = barcodeCanvas.toDataURL('image/png');
+      const qrUrl = await QRCode.toDataURL(`${receipt.studentId}-${receipt.enrollmentId}`, { width: 128, margin: 1 });
+
+      // Open a new window for printing
+      const printWindow = window.open('', '_blank', 'width=800,height=1000');
       if (printWindow) {
         printWindow.document.write(`
-          <html>
-            <head>
-              <title>Coeus Receipt</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                @page {
-                  size: 210mm 148.5mm; /* Half A4 size */
-                  margin: 0;
-                }
-              </style>
-              <style>
-                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-                
-                body { 
-                  font-family: 'Poppins', sans-serif; 
-                  margin: 0; 
-                  padding: 0; 
-                  background-color: #f9fafb; 
-                  color: #1f2937;
-                }
-                
-                .container {
-                  position: relative;
-                  width: 210mm; /* A4 width */
-                  height: 148.5mm; /* Half of A4 height */
-                  margin: 0 auto;
-                  background-color: white;
-                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-                  border-radius: 16px;
-                  overflow: hidden;
-                  page-break-after: always;
-                }
-                
-                .container::after {
-                  content: 'COEUS REVIEW';
-                  position: absolute;
-                  top: 50%;
-                  left: 50%;
-                  transform: translate(-50%, -50%) rotate(-45deg);
-                  font-size: 40px;
-                  font-weight: bold;
-                  color: rgba(59, 130, 246, 0.07);
-                  white-space: nowrap;
-                  pointer-events: none;
-                  z-index: 1;
-                }
-                
-
-                
-                .receipt-header {
-                  background: linear-gradient(135deg, #1e40af, #3b82f6);
-                  color: white;
-                  padding: 15px;
-                  text-align: center;
-                  position: relative;
-                }
-                
-                .receipt-header h1 {
-                  margin: 0;
-                  font-size: 20px;
-                  font-weight: 700;
-                  letter-spacing: 1px;
-                }
-                
-                .receipt-header h2 {
-                  margin: 5px 0 0;
-                  font-size: 14px;
-                  font-weight: 500;
-                  opacity: 0.9;
-                }
-                
-                .receipt-header .logo {
-                  position: absolute;
-                  top: 10px;
-                  left: 10px;
-                  width: 40px;
-                  height: 40px;
-                  background-color: white;
-                  border-radius: 50%;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-weight: bold;
-                  color: #1e40af;
-                  font-size: 14px;
-                }
-                
-                .receipt-body {
-                  padding: 15px;
-                  font-size: 12px;
-                }
-                
-                .receipt-section {
-                  margin-bottom: 12px;
-                }
-                
-                .receipt-section h3 {
-                  color: #1e40af;
-                  font-size: 14px;
-                  margin-bottom: 8px;
-                  padding-bottom: 4px;
-                  border-bottom: 1px solid #e5e7eb;
-                }
-                
-                .receipt-section .grid {
-                  display: grid;
-                  grid-template-columns: repeat(2, 1fr);
-                  gap: 8px;
-                }
-                
-                .receipt-section .item {
-                  margin-bottom: 5px;
-                }
-                
-                .receipt-section .label {
-                  font-size: 10px;
-                  color: #6b7280;
-                  margin-bottom: 2px;
-                }
-                
-                .receipt-section .value {
-                  font-size: 12px;
-                  font-weight: 500;
-                }
-                
-                .id-value {
-                  color: #1e40af;
-                  font-weight: 600;
-                  letter-spacing: 0.5px;
-                }
-                
-                .receipt-footer {
-                  background-color: #f3f4f6;
-                  padding: 8px 15px;
-                  text-align: center;
-                  font-size: 10px;
-                  color: #4b5563;
-                }
-                
-                .barcode-container {
-                  text-align: center;
-                  margin: 10px 0;
-                }
-                
-                .barcode {
-                  padding: 15px;
-                  background-color: #f3f4f6;
-                  border-radius: 8px;
-                  display: inline-block;
-                }
-                
-                .barcode-text {
-                  font-family: monospace;
-                  font-size: 14px;
-                  letter-spacing: 5px;
-                  margin-top: 8px;
-                  color: #1e40af;
-                }
-                
-                .payment-info {
-                  background-color: #f0f9ff;
-                  border-left: 3px solid #3b82f6;
-                  padding: 8px;
-                  border-radius: 4px;
-                }
-                
-                .payment-amount {
-                  font-size: 16px;
-                  font-weight: 700;
-                  color: #1e40af;
-                  margin-top: 3px;
-                }
-                
-                .payment-method {
-                  display: inline-block;
-                  background-color: #dbeafe;
-                  color: #1e40af;
-                  padding: 4px 10px;
-                  border-radius: 20px;
-                  font-size: 14px;
-                  margin-top: 10px;
-                }
-                
-                .verification-note {
-                  margin-top: 10px;
-                  padding: 8px;
-                  background-color: #fffbeb;
-                  border: 1px dashed #fbbf24;
-                  border-radius: 6px;
-                  font-size: 10px;
-                  text-align: center;
-                }
-                
-                @media print {
-                  body {
-                    background-color: white;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    color-adjust: exact !important;
-                    margin: 0;
-                    padding: 0;
-                  }
-                  .container {
-                    box-shadow: none;
-                    margin: 0 auto;
-                    width: 210mm;
-                    height: 148.5mm;
-                    page-break-inside: avoid;
-                    page-break-after: always;
-                  }
-                  .container::after {
-                    color: rgba(59, 130, 246, 0.07) !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                  }
-                  .receipt-header {
-                    background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
-                    color: white !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                  }
-                  .payment-info,
-                  .verification-note,
-                  .barcode,
-                  .receipt-footer {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    color-adjust: exact !important;
-                  }
-                }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="receipt-header">
-                  <div class="logo">CR</div>
-                  <h1>COEUS REVIEW CENTER</h1>
-                  <h2>Enrollment Receipt</h2>
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Coeus Receipt - ${receipt.studentId}</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f9fafb; color: #333; font-size: 12px; line-height: 1.5; }
+              .receipt-container { max-width: 800px; margin: 20px auto; background: white; page-break-inside: avoid; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+              .receipt-header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 25px 20px; text-align: center; position: relative; }
+              .logo { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px; font-weight: 700; border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+              .company-name { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+              .receipt-title { font-size: 14px; font-weight: 400; opacity: 0.9; }
+              .receipt-body { padding: 30px; }
+              .section { margin-bottom: 25px; }
+              .section-title { font-size: 16px; font-weight: 600; color: #1e3a8a; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; position: relative; }
+              .section-title:after { content: ''; position: absolute; bottom: -2px; left: 0; width: 60px; height: 2px; background: #3b82f6; }
+              .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+              .info-item { background: #f0f7ff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: all 0.2s ease; }
+              .info-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+              .info-label { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+              .info-value { font-size: 14px; font-weight: 600; color: #1e293b; }
+              .payment-section { background: linear-gradient(to right, #f0f9ff, #e0f2fe); padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #bfdbfe; }
+              .payment-total { display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: 700; color: #1e3a8a; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #93c5fd; }
+              .payment-details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+              .codes-section { text-align: center; margin: 25px 0; padding: 20px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1; display: flex; justify-content: space-around; align-items: center; }
+              .barcode-container { text-align: center; }
+              .barcode { background: white; padding: 12px; border-radius: 8px; display: inline-block; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+              .barcode-text { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-align: center; margin-top: 5px; }
+              .qr-container { text-align: center; }
+              .qr-code { background: white; padding: 10px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+              .footer { text-align: center; padding: 20px; background: #1e3a8a; color: white; margin-top: 25px; }
+              .footer-message { font-size: 14px; color: white; margin-bottom: 10px; font-weight: 500; }
+              .contact-info { font-size: 12px; color: rgba(255,255,255,0.8); margin-bottom: 15px; display: flex; justify-content: center; gap: 20px; }
+              .contact-item { display: inline-block; }
+              .verification-code { background: rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 20px; font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; letter-spacing: 1px; display: inline-block; }
+              .decorative-line { height: 3px; background: linear-gradient(to right, #3b82f6, #93c5fd); margin: 15px 0; border-radius: 3px; }
+              @media print { body { background: white; padding: 0; margin: 0; } .receipt-container { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; padding: 0; } @page { margin: 0.5in; size: A4; } }
+            </style>
+          </head>
+          <body>
+            <div class="receipt-container">
+              <div class="receipt-header">
+                <div class="logo">CR</div>
+                <div class="company-name">COEUS REVIEW CENTER</div>
+                <div class="receipt-title">Official Enrollment Receipt</div>
+              </div>
+              <div class="receipt-body">
+                <div class="section">
+                  <div class="section-title">Enrollment Information</div>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <div class="info-label">Student ID</div>
+                      <div class="info-value">${receipt.studentId}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Enrollment ID</div>
+                      <div class="info-value">${receipt.enrollmentId}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Date Enrolled</div>
+                      <div class="info-value">${receipt.date}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Program Type</div>
+                      <div class="info-value">${receipt.reviewType}</div>
+                    </div>
+                  </div>
                 </div>
-                
-                <div class="receipt-body">
-                  <div class="receipt-section">
-                    <h3>Enrollment Details</h3>
-                    <div class="grid">
-                      <div class="item">
-                        <div class="label">Student ID</div>
-                        <div class="value id-value">${receipt.studentId}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Enrollment ID</div>
-                        <div class="value id-value">${receipt.enrollmentId}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Date</div>
-                        <div class="value">${receipt.date}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Program</div>
-                        <div class="value">${receipt.reviewType}</div>
-                      </div>
+                <div class="decorative-line"></div>
+                <div class="section">
+                  <div class="section-title">Student Details</div>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <div class="info-label">Full Name</div>
+                      <div class="info-value">${receipt.name}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Contact Number</div>
+                      <div class="info-value">${formData.contactNumber || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Email Address</div>
+                      <div class="info-value">${formData.email || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Payment Plan</div>
+                      <div class="info-value">${formData.paymentPlan || 'Standard Plan'}</div>
                     </div>
                   </div>
-                  
-                  <div class="receipt-section">
-                    <h3>Student Information</h3>
-                    <div class="grid">
-                      <div class="item">
-                        <div class="label">Full Name</div>
-                        <div class="value">${receipt.name}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Email</div>
-                        <div class="value">${formData.email}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Contact Number</div>
-                        <div class="value">${formData.contactNumber}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Gender</div>
-                        <div class="value">${formData.gender}</div>
-                      </div>
+                </div>
+                <div class="decorative-line"></div>
+                <div class="payment-section">
+                  <div class="payment-total">
+                    <span>Initial Payment</span>
+                    <span>PHP ${parseFloat(receipt.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  </div>
+                  <div class="payment-details">
+                    <div class="info-item">
+                      <div class="info-label">Total Program Fee</div>
+                      <div class="info-value">PHP 25,000.00</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Payment Method</div>
+                      <div class="info-value">${formData.paymentMethod || 'Cash Payment'}</div>
                     </div>
                   </div>
-                  
-                  <div class="receipt-section">
-                    <h3>Address Information</h3>
-                    <div class="grid">
-                      <div class="item">
-                        <div class="label">Address</div>
-                        <div class="value">${formData.address}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Barangay</div>
-                        <div class="value">${formData.barangay}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">City/Municipality</div>
-                        <div class="value">${formData.city}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Province</div>
-                        <div class="value">${formData.province}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="receipt-section">
-                    <h3>Guardian Information</h3>
-                    <div class="grid">
-                      <div class="item">
-                        <div class="label">Guardian Name</div>
-                        <div class="value">${formData.guardianFirstName} ${formData.guardianLastName}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Contact Number</div>
-                        <div class="value">${formData.guardianContact}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="receipt-section">
-                    <h3>Program Details</h3>
-                    <div class="grid">
-                      <div class="item">
-                        <div class="label">Program Type</div>
-                        <div class="value">${receipt.reviewType}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Schedule</div>
-                        <div class="value">${formData.programSchedule || 'Standard Schedule'}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Start Date</div>
-                        <div class="value">${new Date().toLocaleDateString()}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">Duration</div>
-                        <div class="value">6 months</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="receipt-section">
-                    <h3>Educational Background</h3>
-                    <div class="grid">
-                      <div class="item">
-                        <div class="label">Course</div>
-                        <div class="value">${formData.course}</div>
-                      </div>
-                      <div class="item">
-                        <div class="label">School</div>
-                        <div class="value">${formData.schoolName}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="receipt-section">
-                    <h3>Payment Details</h3>
-                    <div class="payment-info">
-                      <div class="label">Program Fee</div>
-                      <div class="payment-amount">PHP 25,000.00</div>
-                      <div class="grid" style="margin-top: 15px;">
-                        <div class="item">
-                          <div class="label">Payment Plan</div>
-                          <div class="value">${formData.paymentPlan}</div>
-                        </div>
-                        <div class="item">
-                          <div class="label">Payment Method</div>
-                          <div class="value">${formData.paymentMethod}</div>
-                        </div>
-                        <div class="item">
-                          <div class="label">Initial Payment</div>
-                          <div class="value">PHP ${parseFloat(receipt.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
+                </div>
+                <div class="codes-section">
                   <div class="barcode-container">
-                    <div class="flex justify-between items-center">
-                      <div class="barcode">
-                        <svg width="120" height="30">
-                          <!-- Simple barcode representation -->
-                          ${Array.from({length: 30}, (_, i) => 
-                            `<rect x="${i * 6}" y="0" width="${Math.random() > 0.3 ? 3 : 1}" height="50" fill="#000"></rect>`
-                          ).join('')}
-                        </svg>
-                        <div class="barcode-text">${receipt.studentId}</div>
-                      </div>
-                      
-                      <div class="qr-code">
-                        <svg width="60" height="60" viewBox="0 0 100 100">
-                          <!-- Simple QR code representation -->
-                          <rect x="0" y="0" width="100" height="100" fill="white" />
-                          ${Array.from({length: 8}, (_, i) => 
-                            Array.from({length: 8}, (_, j) => 
-                              Math.random() > 0.7 ? 
-                                `<rect x="${i * 10 + 10}" y="${j * 10 + 10}" width="10" height="10" fill="black" />` : ''
-                            ).join('')
-                          ).join('')}
-                          <!-- Position markers -->
-                          <rect x="10" y="10" width="30" height="30" fill="black" />
-                          <rect x="15" y="15" width="20" height="20" fill="white" />
-                          <rect x="20" y="20" width="10" height="10" fill="black" />
-                          
-                          <rect x="60" y="10" width="30" height="30" fill="black" />
-                          <rect x="65" y="15" width="20" height="20" fill="white" />
-                          <rect x="70" y="20" width="10" height="10" fill="black" />
-                          
-                          <rect x="10" y="60" width="30" height="30" fill="black" />
-                          <rect x="15" y="65" width="20" height="20" fill="white" />
-                          <rect x="20" y="70" width="10" height="10" fill="black" />
-                        </svg>
-                      </div>
+                    <div class="barcode">
+                      <img src="${barcodeUrl}" alt="Barcode" width="180" height="40" />
+                      <div class="barcode-text">${receipt.studentId}</div>
                     </div>
                   </div>
-                  
-                  <div class="verification-note">
-                    Please present this receipt to our staff for verification.
+                  <div class="qr-container">
+                    <div class="qr-code">
+                      <img src="${qrUrl}" alt="QR Code" width="80" height="80" />
+                    </div>
                   </div>
-                </div>
-                
-                <div class="receipt-footer">
-                  <p>Coeus Review & Training Specialist, Inc. | Contact: (02) 8123-4567</p>
                 </div>
               </div>
-              
-              <script>
-                window.onload = function() { 
-                  document.title = 'Coeus Receipt - ${receipt.studentId}';
-                  window.print(); 
-                }
-              </script>
-            </body>
+              <div class="footer">
+                <div class="footer-message">
+                  Thank you for choosing Coeus Review & Training Specialist, Inc.
+                </div>
+                <div class="contact-info">
+                  <span class="contact-item">Address: Roxas City, Capiz</span>
+                  <span class="contact-item">Phone: (036) 621-0000</span>
+                  <span class="contact-item">Email: info@coeusreview.com</span>
+                </div>
+                <div class="verification-code">
+                  VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}
+                </div>
+              </div>
+            </div>
+            <script>
+              window.onload = function() {
+                setTimeout(() => {
+                  window.print();
+                }, 500);
+              };
+            </script>
+          </body>
           </html>
         `);
         printWindow.document.close();
@@ -969,8 +1057,8 @@ const EnrollmentForm = () => {
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-blue-800">Personal Information</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 items-end">
+              <div className="flex flex-col justify-end">
                 <label htmlFor="reviewType" className="block text-sm font-medium text-gray-700 mb-1">
                   What are you enrolling for? <span className="text-red-500">*</span>
                 </label>
@@ -1111,6 +1199,24 @@ const EnrollmentForm = () => {
               </div>
               
               <div>
+                <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
+                  Age
+                </label>
+                <input
+                  type="text"
+                  id="age"
+                  name="age"
+                  value={formData.age}
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                  placeholder="Age will be calculated automatically"
+                />
+              </div>
+              
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
                 <label htmlFor="birthPlace" className="block text-sm font-medium text-gray-700 mb-1">
                   Birth Place
                 </label>
@@ -1124,9 +1230,7 @@ const EnrollmentForm = () => {
                   required
                 />
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
               <div>
                 <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">
                   Contact Number
@@ -1320,19 +1424,64 @@ const EnrollmentForm = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="school-dropdown-container relative">
                 <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700 mb-1">
-                  School Name
+                  School Name <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="schoolName"
-                  name="schoolName"
-                  value={formData.schoolName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="schoolName"
+                    name="schoolName"
+                    value={schoolSearch || formData.schoolName}
+                    onChange={handleSchoolSearch}
+                    onFocus={() => setShowSchoolDropdown(true)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
+                    placeholder="Search for your school..."
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  
+                  {/* Dropdown */}
+                  {showSchoolDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredSchools.length > 0 ? (
+                        <>
+                          {filteredSchools.map((school, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handleSchoolSelect(school)}
+                              className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="text-sm font-medium text-gray-900">{school}</div>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          No schools found matching your search.
+                        </div>
+                      )}
+                      
+                      {/* Add new school option */}
+                      <div
+                        onClick={() => setShowAddSchoolModal(true)}
+                        className="px-4 py-2 hover:bg-green-50 cursor-pointer border-t border-gray-200 bg-green-25"
+                      >
+                        <div className="flex items-center text-sm font-medium text-green-700">
+                          <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Add a new school
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div>
@@ -1543,25 +1692,7 @@ const EnrollmentForm = () => {
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-blue-800">Program and Payment Information</h3>
             
-            <div>
-              <label htmlFor="programSchedule" className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Schedule
-              </label>
-              <select
-                id="programSchedule"
-                name="programSchedule"
-                value={formData.programSchedule}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              >
-                <option value="">Select preferred schedule</option>
-                <option value="Weekday - Morning">Weekday - Morning (8:00 AM - 12:00 PM)</option>
-                <option value="Weekday - Afternoon">Weekday - Afternoon (1:00 PM - 5:00 PM)</option>
-                <option value="Weekend - Full Day">Weekend - Full Day (8:00 AM - 5:00 PM)</option>
-                <option value="Online - Self-paced">Online - Self-paced</option>
-              </select>
-            </div>
+
             
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
               <h4 className="font-semibold text-blue-800 mb-2">Program Fee</h4>
@@ -1623,12 +1754,39 @@ const EnrollmentForm = () => {
                 id="amount"
                 name="amount"
                 value={formData.amount}
-                onChange={handleChange}
+                readOnly
+                disabled
                 min="0"
                 step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                 required
               />
+              {formData.paymentPlan === 'Full Payment' && (
+                <p className="text-xs text-green-700 mt-1">You get a 5% discount for full payment!</p>
+              )}
+              {formData.paymentPlan === 'Installment - 2 Payments' && (
+                <p className="text-xs text-blue-700 mt-1">You will pay 50% now and 50% later.</p>
+              )}
+              {formData.paymentPlan === 'Installment - 3 Payments' && (
+                <p className="text-xs text-blue-700 mt-1">You will pay 1/3 now and the rest in two more payments.</p>
+              )}
+            </div>
+            {/* Student ID (read-only, auto-generated) */}
+            <div>
+              <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-1">
+                Student ID
+              </label>
+              <input
+                type="text"
+                id="studentId"
+                name="studentId"
+                value={studentId || 'Will be generated after enrollment'}
+                readOnly
+                disabled
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                tabIndex={-1}
+              />
+              <p className="text-xs text-gray-500 mt-1">This will be generated after you enroll and will appear on your receipt.</p>
             </div>
             
             <div className="flex items-start space-x-2 mt-6">
@@ -1656,21 +1814,72 @@ const EnrollmentForm = () => {
               </button>
               <button
                 type="submit"
-                disabled={!formData.agreeToTerms}
-                className={`px-6 py-3 ${formData.agreeToTerms ? 'bg-blue-700 hover:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'} text-white font-medium rounded-lg transition-colors`}
+                disabled={!formData.agreeToTerms || isSubmitting}
+                className={`px-6 py-3 ${formData.agreeToTerms && !isSubmitting ? 'bg-blue-700 hover:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'} text-white font-medium rounded-lg transition-colors flex items-center justify-center`}
               >
-                Enroll Now
+                {isSubmitting && (
+                  <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                )}
+                {isSubmitting ? 'Enrolling...' : 'Enroll Now'}
               </button>
             </div>
           </div>
         )}
       </form>
       
+      {/* Add School Modal */}
+      {showAddSchoolModal && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" onClick={handleClickOutside}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New School</h3>
+              <div className="mb-4">
+                <label htmlFor="newSchoolName" className="block text-sm font-medium text-gray-700 mb-2">
+                  School Name
+                </label>
+                <input
+                  type="text"
+                  id="newSchoolName"
+                  value={newSchoolName}
+                  onChange={(e) => setNewSchoolName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Enter the full school name..."
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddSchoolModal(false);
+                    setNewSchoolName('');
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddNewSchool}
+                  disabled={!newSchoolName.trim()}
+                  className={`px-4 py-2 ${newSchoolName.trim() ? 'bg-blue-700 hover:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-lg transition-colors`}
+                >
+                  Add School
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl overflow-hidden shadow-xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-700 to-blue-500 p-6 text-white">
+            <div className="bg-blue-700 p-6 text-white">
               <div className="flex items-center">
                 <div className="bg-white rounded-full h-12 w-12 flex items-center justify-center mr-4">
                   <span className="text-blue-700 font-bold text-xl">CR</span>
@@ -1709,23 +1918,28 @@ const EnrollmentForm = () => {
                   </div>
                 </div>
                 
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center mb-4 space-x-4">
+                  {barcodeDataUrl && (
                   <div className="bg-gray-100 rounded-lg p-3 inline-block">
-                    <svg width="150" height="40">
-                      {/* Simple barcode representation */}
-                      {Array.from({length: 25}, (_, i) => 
-                        <rect key={i} x={i * 6} y="0" width={Math.random() > 0.3 ? 3 : 1} height="40" fill="#000"></rect>
-                      )}
-                    </svg>
+                      <img src={barcodeDataUrl} alt="Barcode" width={150} height={40} />
                     <div className="text-center text-xs font-mono mt-1 text-gray-600">{studentId}</div>
                   </div>
+                  )}
+                  {qrDataUrl && (
+                    <div className="bg-gray-100 rounded-lg p-3 inline-block">
+                      <img src={qrDataUrl} alt="QR Code" width={63} height={63} />
+                    </div>
+                  )}
                 </div>
               </div>
               
               <div className="flex flex-col space-y-3">
                 <button
                   onClick={handlePrintReceipt}
-                  className="w-full px-4 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center"
+                  className={`w-full px-4 py-3 bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center ${(!studentId || !enrollmentId) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
+                  disabled={!studentId || !enrollmentId}
+                  title={!studentId || !enrollmentId ? 'Complete enrollment to enable printing.' : ''}
+                  tabIndex={(!studentId || !enrollmentId) ? -1 : 0}
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
@@ -1733,13 +1947,21 @@ const EnrollmentForm = () => {
                   Print Receipt
                 </button>
                 <button
+                  onClick={handleDownloadPDF}
+                  className={`w-full px-4 py-3 bg-blue-100 text-blue-700 font-medium rounded-lg transition-colors text-center ${(!studentId || !enrollmentId) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-200'}`}
+                  title={!studentId || !enrollmentId ? 'Complete enrollment to enable downloading receipt.' : ''}
+                  disabled={!studentId || !enrollmentId}
+                  tabIndex={(!studentId || !enrollmentId) ? -1 : 0}
+                >
+                  Download Receipt
+                </button>
+                <button
                   onClick={() => {
                     setShowSuccessModal(false);
-                    router.push('/');
                   }}
                   className="w-full px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Return to Home
+                  Close
                 </button>
               </div>
             </div>
