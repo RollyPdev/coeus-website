@@ -64,10 +64,6 @@ interface FormData {
   relationship: string;
   referredBy: string;
   howDidYouHear: string;
-  programSchedule: string;
-  paymentMethod: string;
-  paymentPlan: string;
-  amount: string;
   agreeToTerms: boolean;
 }
 const EnrollmentForm = () => {
@@ -148,10 +144,6 @@ const EnrollmentForm = () => {
     relationship: '',
     referredBy: '',
     howDidYouHear: '',
-    programSchedule: '',
-    paymentMethod: '',
-    paymentPlan: '',
-    amount: '',
     agreeToTerms: false
   });
   
@@ -350,8 +342,7 @@ const EnrollmentForm = () => {
       setLoading(prev => ({ ...prev, barangays: false }));
     }
   };
-  // Program fee constant
-  const PROGRAM_FEE = 25000;
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -373,24 +364,7 @@ const EnrollmentForm = () => {
         }
       }
       
-      // Calculate payment amount based on payment plan
-      if (name === 'paymentPlan') {
-        if (value === 'Full Payment') {
-          // 5% discount for full payment
-          const discountedAmount = PROGRAM_FEE * 0.95;
-          updates.amount = discountedAmount.toFixed(2);
-        } else if (value === 'Installment - 2 Payments') {
-          // First installment of 2 payments
-          const installmentAmount = PROGRAM_FEE / 2;
-          updates.amount = installmentAmount.toFixed(2);
-        } else if (value === 'Installment - 3 Payments') {
-          // First installment of 3 payments
-          const installmentAmount = PROGRAM_FEE / 3;
-          updates.amount = installmentAmount.toFixed(2);
-        } else {
-          updates.amount = '';
-        }
-      }
+
       
       // Handle location selection
       if (name === 'regionCode') {
@@ -575,10 +549,9 @@ const EnrollmentForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Final validation for payment details
-    if (!formData.paymentPlan || !formData.paymentMethod || 
-        !formData.amount || !formData.agreeToTerms) {
-      alert('Please fill in all required fields before submitting.');
+    // Final validation
+    if (!formData.agreeToTerms) {
+      alert('Please agree to the Terms and Conditions before submitting.');
       setIsSubmitting(false);
       return;
     }
@@ -591,7 +564,6 @@ const EnrollmentForm = () => {
       enrollmentId: newEnrollmentId,
       name: `${formData.firstName} ${formData.lastName}`,
       reviewType: formData.reviewType,
-      amount: formData.amount,
       date: new Date().toLocaleDateString()
     };
     // Save receipt for reference
@@ -725,7 +697,7 @@ const EnrollmentForm = () => {
       
       // Student info in a cleaner layout
       pdf.setFillColor(bgBlue);
-      pdf.roundedRect(25, 115, 160, 50, 3, 3, 'F');
+      pdf.roundedRect(25, 115, 160, 60, 3, 3, 'F');
       
       pdf.setFontSize(9);
       pdf.setTextColor(gray);
@@ -757,67 +729,74 @@ const EnrollmentForm = () => {
       
       pdf.setFontSize(9);
       pdf.setTextColor(gray);
-      pdf.text('Payment Plan', 35, 155);
+      pdf.text('School', 35, 155);
       pdf.setFontSize(11);
       pdf.setTextColor(darkGray);
-      pdf.text(formData.paymentPlan || 'Standard Plan', 35, 160);
+      pdf.text(formData.schoolName || 'N/A', 35, 160);
       
-      // Payment section with improved styling
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Year Graduated', 105, 155);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(formData.yearGraduated || 'N/A', 105, 160);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('Guardian', 35, 170);
+      pdf.setFontSize(11);
+      pdf.setTextColor(darkGray);
+      pdf.text(`${formData.guardianFirstName} ${formData.guardianLastName}` || 'N/A', 35, 175);
+      
+      // Enrollment Status section
       pdf.setFontSize(14);
       pdf.setTextColor(darkGray);
-      pdf.text('Payment Details', 105, 180, { align: 'center' });
+      pdf.text('Enrollment Status', 105, 190, { align: 'center' });
       
       // Decorative line
       pdf.setDrawColor(lightBlue);
       pdf.setLineWidth(0.5);
-      pdf.line(65, 183, 145, 183);
+      pdf.line(65, 193, 145, 193);
       
-      // Payment box
+      // Status box
       pdf.setFillColor('#f0f9ff');
-      pdf.roundedRect(25, 190, 160, 40, 3, 3, 'F');
+      pdf.roundedRect(25, 200, 160, 30, 3, 3, 'F');
       pdf.setDrawColor('#bfdbfe');
-      pdf.roundedRect(25, 190, 160, 40, 3, 3, 'S');
+      pdf.roundedRect(25, 200, 160, 30, 3, 3, 'S');
       
-      // Payment details
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text('Initial Payment:', 35, 205);
+      // Status details
       pdf.setFontSize(12);
       pdf.setTextColor(blue);
-      pdf.text(`PHP ${parseFloat(receipt.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`, 165, 205, { align: 'right' });
-      
-      pdf.setFontSize(11);
+      pdf.text('ENROLLED', 105, 215, { align: 'center' });
+      pdf.setFontSize(10);
       pdf.setTextColor(darkGray);
-      pdf.text('Total Program Fee:', 35, 215);
-      pdf.setFontSize(12);
-      pdf.setTextColor(blue);
-      pdf.text('PHP 25,000.00', 165, 215, { align: 'right' });
+      pdf.text('Successfully registered for the review program', 105, 225, { align: 'center' });
       
       // Codes section with better layout
       pdf.setFillColor(bgBlue);
-      pdf.roundedRect(25, 235, 160, 35, 3, 3, 'F');
+      pdf.roundedRect(25, 240, 160, 35, 3, 3, 'F');
       
       // Barcode with container - centered
       pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(30, 240, 90, 25, 2, 2, 'F');
-      pdf.addImage(barcodeUrl, 'PNG', 35, 245, 80, 15);
+      pdf.roundedRect(30, 245, 90, 25, 2, 2, 'F');
+      pdf.addImage(barcodeUrl, 'PNG', 35, 250, 80, 15);
       
       // Add barcode label
       pdf.setFontSize(8);
       pdf.setTextColor(gray);
-      pdf.text(receipt.studentId, 75, 265, { align: 'center' });
+      pdf.text(receipt.studentId, 75, 270, { align: 'center' });
       
       // QR code with container - properly aligned
       pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(130, 240, 40, 25, 2, 2, 'F');
-      pdf.addImage(qrUrl, 'PNG', 135, 240, 30, 25);
+      pdf.roundedRect(130, 245, 40, 25, 2, 2, 'F');
+      pdf.addImage(qrUrl, 'PNG', 135, 245, 30, 25);
       
       // Verification code - moved below the barcode/QR code section
       pdf.setFillColor(255, 255, 255, 0.2);
-      pdf.roundedRect(55, 275, 100, 8, 4, 4, 'F');
+      pdf.roundedRect(55, 280, 100, 8, 4, 4, 'F');
       pdf.setFontSize(8);
       pdf.setTextColor(255, 255, 255);
-      pdf.text(`VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}`, 105, 280, { align: 'center' });
+      pdf.text(`VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}`, 105, 285, { align: 'center' });
       
       // Footer with better spacing
       pdf.setFillColor(blue);
@@ -956,25 +935,25 @@ const EnrollmentForm = () => {
                       <div class="info-value">${formData.email || 'N/A'}</div>
                     </div>
                     <div class="info-item">
-                      <div class="info-label">Payment Plan</div>
-                      <div class="info-value">${formData.paymentPlan || 'Standard Plan'}</div>
+                      <div class="info-label">School</div>
+                      <div class="info-value">${formData.schoolName || 'N/A'}</div>
                     </div>
                   </div>
                 </div>
                 <div class="decorative-line"></div>
                 <div class="payment-section">
                   <div class="payment-total">
-                    <span>Initial Payment</span>
-                    <span>PHP ${parseFloat(receipt.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    <span>Enrollment Status</span>
+                    <span style="color: #10b981; font-weight: bold;">ENROLLED</span>
                   </div>
                   <div class="payment-details">
                     <div class="info-item">
-                      <div class="info-label">Total Program Fee</div>
-                      <div class="info-value">PHP 25,000.00</div>
+                      <div class="info-label">Year Graduated</div>
+                      <div class="info-value">${formData.yearGraduated || 'N/A'}</div>
                     </div>
                     <div class="info-item">
-                      <div class="info-label">Payment Method</div>
-                      <div class="info-value">${formData.paymentMethod || 'Cash Payment'}</div>
+                      <div class="info-label">Guardian</div>
+                      <div class="info-value">${formData.guardianFirstName} ${formData.guardianLastName}</div>
                     </div>
                   </div>
                 </div>
@@ -1687,92 +1666,114 @@ const EnrollmentForm = () => {
           </div>
         )}
         
-        {/* Step 4: Program and Payment Information */}
+        {/* Step 4: Student Information Summary */}
         {currentStep === 4 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-blue-800">Program and Payment Information</h3>
+            <h3 className="text-xl font-semibold text-blue-800">Student Information Summary</h3>
+            <p className="text-sm text-gray-600 mb-6">Please review all your information before submitting your enrollment.</p>
             
-
-            
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
-              <h4 className="font-semibold text-blue-800 mb-2">Program Fee</h4>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700">{formData.reviewType} Review Program</span>
-                <span className="font-bold text-blue-800">PHP 25,000.00</span>
+            {/* Personal Information Summary */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-800 mb-3">Personal Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Full Name</label>
+                  <input type="text" value={`${formData.firstName} ${formData.middleInitial} ${formData.lastName}`} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Review Type</label>
+                  <input type="text" value={formData.reviewType} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Gender</label>
+                  <input type="text" value={formData.gender} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Age</label>
+                  <input type="text" value={formData.age} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Birthday</label>
+                  <input type="text" value={formData.birthday} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Birth Place</label>
+                  <input type="text" value={formData.birthPlace} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-2">
-                Includes review materials, mock exams, and access to online resources
+            </div>
+            
+            {/* Contact Information Summary */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+              <h4 className="font-semibold text-green-800 mb-3">Contact Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Number</label>
+                  <input type="text" value={formData.contactNumber} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+                  <input type="text" value={formData.email} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Complete Address</label>
+                  <input type="text" value={`${formData.address}, ${formData.barangay}, ${formData.city}, ${formData.province}, ${formData.region} ${formData.zipCode}`} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
               </div>
             </div>
             
-            <div>
-              <label htmlFor="paymentPlan" className="block text-sm font-medium text-gray-700 mb-1">
-                Payment Plan
-              </label>
-              <select
-                id="paymentPlan"
-                name="paymentPlan"
-                value={formData.paymentPlan}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              >
-                <option value="">Select payment plan</option>
-                <option value="Full Payment">Full Payment (5% discount)</option>
-                <option value="Installment - 2 Payments">Installment - 2 Payments</option>
-                <option value="Installment - 3 Payments">Installment - 3 Payments</option>
-              </select>
+            {/* Educational Background Summary */}
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+              <h4 className="font-semibold text-purple-800 mb-3">Educational Background</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Course</label>
+                  <input type="text" value={formData.course} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Year Graduated</label>
+                  <input type="text" value={formData.yearGraduated} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">School Name</label>
+                  <input type="text" value={formData.schoolName} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">How did you hear about us?</label>
+                  <input type="text" value={formData.howDidYouHear} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Referred By</label>
+                  <input type="text" value={formData.referredBy || 'N/A'} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+              </div>
             </div>
             
-            <div>
-              <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">
-                Payment Method
-              </label>
-              <select
-                id="paymentMethod"
-                name="paymentMethod"
-                value={formData.paymentMethod}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              >
-                <option value="">Select payment method</option>
-                <option value="GCash">GCash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
-                <option value="PayPal">PayPal</option>
-                <option value="Credit/Debit Card">Credit/Debit Card</option>
-              </select>
+            {/* Guardian Information Summary */}
+            <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+              <h4 className="font-semibold text-orange-800 mb-3">Guardian/Emergency Contact</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Guardian Name</label>
+                  <input type="text" value={`${formData.guardianFirstName} ${formData.guardianMiddleInitial} ${formData.guardianLastName}`} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Relationship</label>
+                  <input type="text" value={formData.relationship} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Number</label>
+                  <input type="text" value={formData.guardianContact} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
+                  <input type="text" value={formData.guardianAddress} readOnly className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white" />
+                </div>
+              </div>
             </div>
             
-            <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                Initial Payment Amount (PHP)
-              </label>
-              <input
-                type="number"
-                id="amount"
-                name="amount"
-                value={formData.amount}
-                readOnly
-                disabled
-                min="0"
-                step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-                required
-              />
-              {formData.paymentPlan === 'Full Payment' && (
-                <p className="text-xs text-green-700 mt-1">You get a 5% discount for full payment!</p>
-              )}
-              {formData.paymentPlan === 'Installment - 2 Payments' && (
-                <p className="text-xs text-blue-700 mt-1">You will pay 50% now and 50% later.</p>
-              )}
-              {formData.paymentPlan === 'Installment - 3 Payments' && (
-                <p className="text-xs text-blue-700 mt-1">You will pay 1/3 now and the rest in two more payments.</p>
-              )}
-            </div>
             {/* Student ID (read-only, auto-generated) */}
-            <div>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-1">
                 Student ID
               </label>
@@ -1912,8 +1913,8 @@ const EnrollmentForm = () => {
                       <p className="font-medium">{formData.reviewType}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Amount</p>
-                      <p className="font-medium">PHP {parseFloat(formData.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                      <p className="text-xs text-gray-500">Status</p>
+                      <p className="font-medium text-green-600">ENROLLED</p>
                     </div>
                   </div>
                 </div>
