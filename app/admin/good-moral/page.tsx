@@ -62,10 +62,11 @@ export default function GoodMoralPage() {
       const response = await fetch('/api/admin/students');
       if (response.ok) {
         const data = await response.json();
-        setStudents(data);
+        setStudents(data.students || []);
       }
     } catch (error) {
       console.error('Error fetching students:', error);
+      setStudents([]);
     }
   };
 
@@ -124,10 +125,10 @@ export default function GoodMoralPage() {
     window.open(`/api/admin/good-moral/download/${cert.id}`, '_blank');
   };
 
-  const filteredStudents = (students || []).filter(student =>
+  const filteredStudents = Array.isArray(students) ? students.filter(student =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(studentSearch.toLowerCase()) ||
     student.studentId.toLowerCase().includes(studentSearch.toLowerCase())
-  );
+  ) : [];
 
   const filteredCertificates = certificates.filter(cert =>
     `${cert.student.firstName} ${cert.student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
