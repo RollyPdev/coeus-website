@@ -23,10 +23,10 @@ export async function GET() {
       totalAttendance,
       presentAttendance
     ] = await Promise.all([
-      db.student.count(),
-      db.student.count({ where: { createdAt: { lt: lastMonth } } }),
-      db.enrollment.count({ where: { status: { not: 'COMPLETED' } } }),
-      db.enrollment.count({ where: { createdAt: { lt: lastWeek }, status: { not: 'COMPLETED' } } }),
+      db.student.count({ where: { status: 'active' } }),
+      db.student.count({ where: { createdAt: { lt: lastMonth }, status: 'active' } }),
+      db.enrollment.count({ where: { status: 'COMPLETED' } }),
+      db.enrollment.count({ where: { createdAt: { lt: lastWeek }, status: 'COMPLETED' } }),
       db.goodMoral.count(),
       db.goodMoral.count({ where: { createdAt: { lt: lastMonth } } }),
       db.payment.aggregate({ _sum: { amount: true } }),
