@@ -6,7 +6,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
     const studentId = searchParams.get('studentId');
-    const session = searchParams.get('session') || 'morning';
     
     const whereClause: any = {};
     
@@ -19,7 +18,6 @@ export async function GET(request: NextRequest) {
         gte: startDate,
         lt: endDate
       };
-      whereClause.session = session;
     }
     
     if (studentId) {
@@ -56,7 +54,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { studentId, date, status, remarks, session = 'morning', timeSettings } = await request.json();
+    const { studentId, date, status, remarks } = await request.json();
     
     if (!studentId || !date || !status) {
       return NextResponse.json(
@@ -72,8 +70,7 @@ export async function POST(request: NextRequest) {
         date: {
           gte: new Date(date),
           lt: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
-        },
-        session
+        }
       }
     });
 
@@ -84,8 +81,7 @@ export async function POST(request: NextRequest) {
         where: { id: existingAttendance.id },
         data: {
           status,
-          remarks: remarks || null,
-          session
+          remarks: remarks || null
         },
         include: {
           student: {
@@ -106,8 +102,7 @@ export async function POST(request: NextRequest) {
           studentId,
           date: new Date(date),
           status,
-          remarks: remarks || null,
-          session
+          remarks: remarks || null
         },
         include: {
           student: {
