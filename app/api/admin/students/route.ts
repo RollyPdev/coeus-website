@@ -1,27 +1,22 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const db = prisma as any;
-
 export async function GET() {
   try {
-    const students = await db.student.findMany({
+    const students = await prisma.student.findMany({
       where: {
-        status: 'active' // Only show active students (approved enrollments)
+        status: 'active'
       },
-      include: {
-        enrollments: {
-          select: {
-            enrollmentId: true,
-            reviewType: true,
-            status: true,
-            createdAt: true
-          }
-        }
+      select: {
+        id: true,
+        studentId: true,
+        firstName: true,
+        lastName: true,
+        photoUrl: true
       },
       orderBy: {
-        createdAt: 'desc',
-      },
+        lastName: 'asc'
+      }
     });
 
     return NextResponse.json({ students });
@@ -46,19 +41,15 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Delete related records first to avoid foreign key constraints
-    await db.$transaction(async (tx: any) => {
-      // Delete good moral certificates
+    await prisma.$transaction(async (tx) => {
       await tx.goodMoral.deleteMany({
         where: { studentId: id }
       });
       
-      // Delete enrollments
       await tx.enrollment.deleteMany({
         where: { studentId: id }
       });
       
-      // Finally delete the student
       await tx.student.delete({
         where: { id }
       });

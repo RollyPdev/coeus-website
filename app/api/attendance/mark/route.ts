@@ -4,8 +4,8 @@ import prisma from '@/lib/prisma';
 // Review center coordinates - 11°34'27.2"N 122°44'41.9"E
 const REVIEW_CENTER_LAT = 11.574222;
 const REVIEW_CENTER_LNG = 122.744972;
-const ALLOWED_RADIUS = process.env.NODE_ENV === 'development' ? 50000 : 1000; // 50km for dev, 1km for prod
-const BYPASS_LOCATION = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_BYPASS_LOCATION === 'true';
+const ALLOWED_RADIUS = 1000; // 1km radius
+const BYPASS_LOCATION = process.env.NEXT_PUBLIC_BYPASS_LOCATION === 'true';
 
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371e3; // Earth's radius in meters

@@ -1,52 +1,48 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const skip = (page - 1) * limit;
+
     const enrollments = await prisma.enrollment.findMany({
-      include: {
-        student: true // Include student data for display
+      select: {
+        id: true,
+        enrollmentId: true,
+        reviewType: true,
+        status: true,
+        createdAt: true,
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            contactNumber: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: limit,
+      skip: skip
     });
 
-    // Map the data to match frontend interface
-    const mappedEnrollments = enrollments.map(enrollment => ({
-      id: enrollment.id,
-      firstName: enrollment.student?.firstName || '',
-      lastName: enrollment.student?.lastName || '',
-      email: enrollment.student?.email || '',
-      contactNumber: enrollment.student?.contactNumber || '',
-      reviewType: enrollment.reviewType,
-      status: enrollment.status,
-      createdAt: enrollment.createdAt,
-      // Include complete student data for modal
-      student: {
-        id: enrollment.student?.id || '',
-        firstName: enrollment.student?.firstName || '',
-        lastName: enrollment.student?.lastName || '',
-        middleInitial: enrollment.student?.middleInitial || '',
-        email: enrollment.student?.email || '',
-        contactNumber: enrollment.student?.contactNumber || '',
-        address: enrollment.student?.address || '',
-        region: enrollment.student?.region || '',
-        province: enrollment.student?.province || '',
-        city: enrollment.student?.city || '',
-        barangay: enrollment.student?.barangay || '',
-        zipCode: enrollment.student?.zipCode || '',
-        guardianFirstName: enrollment.student?.guardianFirstName || '',
-        guardianLastName: enrollment.student?.guardianLastName || '',
-        guardianContact: enrollment.student?.guardianContact || '',
-        guardianAddress: enrollment.student?.guardianAddress || '',
-        schoolName: enrollment.student?.schoolName || '',
-        course: enrollment.student?.course || '',
-        yearGraduated: enrollment.student?.yearGraduated || ''
-      }
-    }));
+    const total = await prisma.enrollment.count();
 
-    return NextResponse.json(mappedEnrollments);
+    return NextResponse.json({
+      enrollments,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching enrollments:', error);
     return NextResponse.json(

@@ -58,7 +58,7 @@ export default function AttendancePage() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/admin/students');
+      const response = await fetch('/api/admin/attendance/students');
       const data = await response.json();
       setStudents(data.students || []);
     } catch (error) {
@@ -460,15 +460,11 @@ export default function AttendancePage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              {student.photoUrl ? (
-                                <img className="h-10 w-10 rounded-full object-cover" src={student.photoUrl} alt="" />
-                              ) : (
-                                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                  <span className="text-sm font-medium text-gray-700">
-                                    {student.firstName[0]}{student.lastName[0]}
-                                  </span>
-                                </div>
-                              )}
+                              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                <span className="text-sm font-medium text-gray-700">
+                                  {student.firstName[0]}{student.lastName[0]}
+                                </span>
+                              </div>
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">

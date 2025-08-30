@@ -4,14 +4,11 @@ import { useState, useEffect } from 'react';
 
 interface Enrollment {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  contactNumber: string;
+  enrollmentId: string;
   reviewType: string;
   status: 'PENDING' | 'VERIFIED' | 'COMPLETED' | 'REJECTED';
   createdAt: string;
-  student?: {
+  student: {
     id: string;
     firstName: string;
     lastName: string;
@@ -58,7 +55,9 @@ export default function EnrollmentsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Enrollment data:', data);
-        setEnrollments(data);
+        // Handle both old and new response formats
+        const enrollmentsData = data.enrollments || data;
+        setEnrollments(enrollmentsData);
       }
     } catch (error) {
       console.error('Error fetching enrollments:', error);
@@ -68,9 +67,9 @@ export default function EnrollmentsPage() {
   };
 
   const filteredEnrollments = enrollments.filter(enrollment => {
-    const fullName = `${enrollment.firstName} ${enrollment.lastName}`;
+    const fullName = `${enrollment.student?.firstName || ''} ${enrollment.student?.lastName || ''}`;
     const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         enrollment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (enrollment.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          enrollment.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || enrollment.status.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
@@ -285,14 +284,14 @@ export default function EnrollmentsPage() {
                         <div className="flex items-center">
                           <div className="relative">
                             <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                              {enrollment.firstName?.[0] || 'N'}{enrollment.lastName?.[0] || 'A'}
+                              {enrollment.student?.firstName?.[0] || 'N'}{enrollment.student?.lastName?.[0] || 'A'}
                             </div>
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-bold text-slate-800">{enrollment.firstName} {enrollment.lastName}</div>
-                            <div className="text-sm text-slate-500">{enrollment.email}</div>
-                            <div className="text-xs text-slate-400">{enrollment.contactNumber}</div>
+                            <div className="text-sm font-bold text-slate-800">{enrollment.student?.firstName} {enrollment.student?.lastName}</div>
+                            <div className="text-sm text-slate-500">{enrollment.student?.email}</div>
+                            <div className="text-xs text-slate-400">{enrollment.student?.contactNumber}</div>
                           </div>
                         </div>
                       </td>
@@ -378,7 +377,7 @@ export default function EnrollmentsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 bg-white/20 rounded-2xl flex items-center justify-center text-white font-bold text-xl border-4 border-white/30">
-                      {selectedEnrollment.firstName?.[0]}{selectedEnrollment.lastName?.[0]}
+                      {selectedEnrollment.student?.firstName?.[0]}{selectedEnrollment.student?.lastName?.[0]}
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-white">

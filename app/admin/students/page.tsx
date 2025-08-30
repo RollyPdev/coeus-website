@@ -31,6 +31,7 @@ interface Student {
   yearGraduated?: string;
   howDidYouHear?: string;
   referredBy?: string;
+  photo?: string;
   photoUrl?: string;
   status: string;
   createdAt: string;
@@ -48,12 +49,16 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [loadingStudentDetails, setLoadingStudentDetails] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState<Partial<Student>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [studentsPerPage] = useState(10);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [addFormData, setAddFormData] = useState({
     reviewType: '',
@@ -113,6 +118,7 @@ export default function StudentsPage() {
         setLoading(true);
         const response = await fetch('/api/admin/students');
         const data = await response.json();
+        console.log('API Response:', data);
         setStudents(data.students || []);
       } catch (error) {
         console.error('Failed to fetch students:', error);
@@ -206,6 +212,17 @@ export default function StudentsPage() {
     const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+  const startIndex = (currentPage - 1) * studentsPerPage;
+  const endIndex = startIndex + studentsPerPage;
+  const currentStudents = filteredStudents.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const handleDelete = async (studentId: string) => {
     if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
@@ -455,10 +472,7 @@ export default function StudentsPage() {
     setBarangays([]);
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedStudents = filteredStudents.slice(startIndex, startIndex + itemsPerPage);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -516,11 +530,11 @@ export default function StudentsPage() {
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Enrolled Students</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Active Students</p>
                 <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.status === 'active').length}</p>
                 <div className="flex items-center mt-2">
                   <div className="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
-                  <span className="text-xs font-medium text-green-600">Completed enrollment</span>
+                  <span className="text-xs font-medium text-green-600">Currently enrolled</span>
                 </div>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -534,11 +548,11 @@ export default function StudentsPage() {
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Inactive Students</p>
-                <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.status === 'inactive').length}</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Pending Students</p>
+                <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.status === 'pending' || s.status === 'inactive').length}</p>
                 <div className="flex items-center mt-2">
                   <div className="w-2 h-2 rounded-full mr-2 bg-amber-500"></div>
-                  <span className="text-xs font-medium text-amber-600">Not enrolled</span>
+                  <span className="text-xs font-medium text-amber-600">Awaiting verification</span>
                 </div>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -597,6 +611,7 @@ export default function StudentsPage() {
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
+                  <option value="pending">Pending</option>
                   <option value="inactive">Inactive</option>
                   <option value="graduated">Graduated</option>
                 </select>
@@ -649,7 +664,7 @@ export default function StudentsPage() {
                       </div>
                     </td>
                   </tr>
-                ) : paginatedStudents.length === 0 ? (
+                ) : filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center">
@@ -662,22 +677,14 @@ export default function StudentsPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedStudents.map((student) => (
+                  currentStudents.map((student) => (
                     <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
-                            {student.photoUrl ? (
-                              <img 
-                                src={student.photoUrl} 
-                                alt={`${student.firstName} ${student.lastName}`}
-                                className="h-12 w-12 rounded-full object-cover ring-2 ring-white"
-                              />
-                            ) : (
-                              <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                                {student.firstName[0]}{student.lastName[0]}
-                              </div>
-                            )}
+                            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                              {student.firstName[0]}{student.lastName[0]}
+                            </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
@@ -694,8 +701,8 @@ export default function StudentsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{student.contactNumber}</div>
-                        <div className="text-xs text-gray-500">{student.city}, {student.province}</div>
+                        <div className="text-sm text-gray-900">{student.contactNumber || 'N/A'}</div>
+                        <div className="text-xs text-gray-500">{[student.city, student.province].filter(Boolean).join(', ') || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
@@ -704,41 +711,67 @@ export default function StudentsPage() {
                         <div className="text-xs text-gray-500">{student.course}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 max-w-xs truncate" title={student.schoolName}>
-                          {student.schoolName}
+                        <div className="text-sm text-gray-900 max-w-xs truncate" title={student.schoolName || 'N/A'}>
+                          {student.schoolName || 'N/A'}
                         </div>
-                        <div className="text-xs text-gray-500">Graduated: {student.yearGraduated}</div>
+                        <div className="text-xs text-gray-500">Graduated: {student.yearGraduated || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           student.status === 'active' ? 'bg-green-100 text-green-800' :
+                          student.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           student.status === 'inactive' ? 'bg-red-100 text-red-800' :
                           student.status === 'graduated' ? 'bg-purple-100 text-purple-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
                             student.status === 'active' ? 'bg-green-400' :
+                            student.status === 'pending' ? 'bg-yellow-400' :
                             student.status === 'inactive' ? 'bg-red-400' :
                             student.status === 'graduated' ? 'bg-purple-400' :
                             'bg-gray-400'
                           }`}></div>
-                          {student.status === 'active' ? 'Enrolled' : student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+                          {student.status === 'active' ? 'Active' : 
+                           student.status === 'pending' ? 'Pending' :
+                           student.status.charAt(0).toUpperCase() + student.status.slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">
                           <button 
-                            onClick={() => {
-                              setSelectedStudent(student);
-                              setShowModal(true);
+                            onClick={async () => {
+                              setLoadingStudentDetails(true);
+                              try {
+                                const response = await fetch(`/api/admin/students/${student.id}`);
+                                const data = await response.json();
+                                if (data.student) {
+                                  setSelectedStudent(data.student);
+                                  setShowModal(true);
+                                } else {
+                                  alert('Failed to load student details');
+                                }
+                              } catch (error) {
+                                console.error('Error loading student details:', error);
+                                alert('Error loading student details');
+                              } finally {
+                                setLoadingStudentDetails(false);
+                              }
                             }}
-                            className="inline-flex items-center p-1 border border-transparent rounded-full text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            disabled={loadingStudentDetails}
+                            className="inline-flex items-center p-1 border border-transparent rounded-full text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="View Details"
                           >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
+                            {loadingStudentDetails ? (
+                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            )}
                           </button>
                           <button 
                             onClick={() => {
@@ -779,66 +812,82 @@ export default function StudentsPage() {
           </div>
         </div>
 
-          {/* Pagination */}
-          {!loading && filteredStudents.length > 0 && (
-            <div className="bg-white/50 backdrop-blur-sm px-4 py-3 flex items-center justify-between border-t border-gray-200/50 sm:px-6 rounded-b-2xl">
+        {/* Pagination */}
+        {filteredStudents.length > studentsPerPage && (
+          <div className="bg-white/70 backdrop-blur-sm border-t border-gray-200/50 px-6 py-4 flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white/70 backdrop-blur-sm hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white/70 backdrop-blur-sm hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  Next
-                </button>
+              <button
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
                   Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredStudents.length)}</span> of{' '}
-                  <span className="font-medium">{filteredStudents.length}</span> results
+                  <span className="font-medium">{Math.min(endIndex, filteredStudents.length)}</span> of{' '}
+                  <span className="font-medium">{filteredStudents.length}</span> students
                 </p>
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-xl border border-gray-200 bg-white/70 backdrop-blur-sm text-sm font-medium text-gray-500 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
+                  <button
+                    onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <span className="sr-only">Previous</span>
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-all duration-200 ${
-                            currentPage === pageNum
-                              ? 'z-10 bg-gradient-to-r from-blue-500 to-indigo-500 border-blue-500 text-white'
-                              : 'bg-white/70 backdrop-blur-sm border-gray-200 text-gray-500 hover:bg-white/90'
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    if (totalPages <= 7 || page <= 3 || page >= totalPages - 2 || Math.abs(page - currentPage) <= 1) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === currentPage
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                           }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === 4 && currentPage > 5) {
+                      return (
+                        <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                          ...
+                        </span>
+                      );
+                    } else if (page === totalPages - 3 && currentPage < totalPages - 4) {
+                      return (
+                        <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
                   })}
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-xl border border-gray-200 bg-white/70 backdrop-blur-sm text-sm font-medium text-gray-500 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
+                  
+                  <button
+                    onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <span className="sr-only">Next</span>
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -847,8 +896,9 @@ export default function StudentsPage() {
                 </nav>
               </div>
             </div>
-            </div>
-          )}
+          </div>
+        )}
+
         </div>
       </div>
 
@@ -860,9 +910,9 @@ export default function StudentsPage() {
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  {selectedStudent.photoUrl ? (
+                  {(selectedStudent.photoUrl || selectedStudent.photo) ? (
                     <img 
-                      src={selectedStudent.photoUrl} 
+                      src={selectedStudent.photoUrl || selectedStudent.photo} 
                       alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
                       className="h-16 w-16 rounded-full object-cover border-4 border-white shadow-lg"
                     />
@@ -903,18 +953,19 @@ export default function StudentsPage() {
                 <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
                   {/* Student Photo */}
                   <div className="text-center">
-                    {selectedStudent.photoUrl ? (
+                    {(selectedStudent.photoUrl || selectedStudent.photo) ? (
                       <img 
-                        src={selectedStudent.photoUrl} 
+                        src={selectedStudent.photoUrl || selectedStudent.photo} 
                         alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
-                        className="h-32 w-32 rounded-2xl object-cover border-4 border-blue-200 shadow-lg"
+                        className="h-72 w-72 rounded-2xl object-cover border-4 border-blue-200 shadow-lg"
+                        style={{ width: '288px', height: '288px' }}
                       />
                     ) : (
-                      <div className="h-32 w-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-3xl border-4 border-blue-200 shadow-lg">
+                      <div className="h-72 w-72 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-5xl border-4 border-blue-200 shadow-lg" style={{ width: '288px', height: '288px' }}>
                         {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
                       </div>
                     )}
-                    <p className="mt-3 text-sm text-gray-600 font-medium">Student Photo</p>
+                    <p className="mt-3 text-sm text-gray-600 font-medium">Student Photo (3x3 inches)</p>
                   </div>
 
                   {/* QR Code */}
@@ -939,9 +990,9 @@ export default function StudentsPage() {
                       
                       {/* Student Photo in Badge */}
                       <div className="flex justify-center mt-1">
-                        {selectedStudent.photoUrl ? (
+                        {(selectedStudent.photoUrl || selectedStudent.photo) ? (
                           <img 
-                            src={selectedStudent.photoUrl} 
+                            src={selectedStudent.photoUrl || selectedStudent.photo} 
                             alt="Badge Photo"
                             className="h-8 w-8 rounded-full object-cover border border-white"
                           />
