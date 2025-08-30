@@ -22,16 +22,21 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       }
 
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const currentTime = Date.now() / 1000;
-        
-        if (payload.exp < currentTime) {
-          localStorage.removeItem('adminToken');
-          router.push('/login');
-          return;
+        // For our simplified base64 token format
+        const decoded = atob(token);
+        if (decoded.includes(':')) {
+          const [email, timestamp] = decoded.split(':');
+          const tokenAge = Date.now() - parseInt(timestamp);
+          // Token valid for 24 hours (86400000 ms)
+          if (tokenAge < 86400000) {
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            return;
+          }
         }
-        
-        setIsAuthenticated(true);
+        // Invalid or expired token
+        localStorage.removeItem('adminToken');
+        router.push('/login');
       } catch (error) {
         localStorage.removeItem('adminToken');
         router.push('/login');
