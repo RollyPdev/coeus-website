@@ -1,46 +1,54 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-// Sample data - replace with your actual lecturer data
-const lecturers = [
-  { 
-    name: 'Dr. John Doe', 
-    photo: '/lecturer1.jpg', 
-    details: 'Criminology Expert', 
-    credentials: 'PhD, 20+ years experience',
-    specialization: 'Criminal Law and Procedure',
-    quote: 'Education is the key to unlocking your potential in the field of criminology.'
-  },
-  { 
-    name: 'Ms. Jane Smith', 
-    photo: '/lecturer2.jpg', 
-    details: 'Nursing Specialist', 
-    credentials: 'RN, MSN, 15+ years experience',
-    specialization: 'Medical-Surgical Nursing',
-    quote: 'Compassion and knowledge go hand in hand in the nursing profession.'
-  },
-  { 
-    name: 'Mr. Alex Lee', 
-    photo: '/lecturer3.jpg', 
-    details: 'CPD Facilitator', 
-    credentials: 'CPD Certified, 10+ years experience',
-    specialization: 'Professional Development',
-    quote: 'Continuous learning is the foundation of professional excellence.'
-  },
-  { 
-    name: 'Dr. Maria Cruz', 
-    photo: '/lecturer4.jpg', 
-    details: 'Criminology Lecturer', 
-    credentials: 'PhD, 12+ years experience',
-    specialization: 'Forensic Science',
-    quote: 'The details matter in forensic science. Precision leads to justice.'
-  }
-];
+interface Lecturer {
+  id: string;
+  name: string;
+  photo: string;
+  position: string;
+  credentials: string;
+  bio: string;
+  specialization: string;
+  category: string;
+  subjects: string;
+}
 
 const LecturersSection = () => {
-  // Removed modal state
+  const [lecturers, setLecturers] = useState<Lecturer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const lecturersPerPage = 8;
+
+  useEffect(() => {
+    const fetchLecturers = async () => {
+      try {
+        const response = await fetch('/api/lecturers');
+        if (response.ok) {
+          const data = await response.json();
+          setLecturers(data);
+        }
+      } catch (error) {
+        console.error('Error fetching lecturers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLecturers();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-white to-blue-50" id="lecturers">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading lecturers...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
   
   // Calculate total pages
   const totalPages = Math.ceil(lecturers.length / lecturersPerPage);
@@ -79,14 +87,14 @@ const LecturersSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-900 to-transparent opacity-70"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                   <h3 className="font-bold text-xl">{lecturer.name}</h3>
-                  <p className="text-blue-100">{lecturer.details}</p>
+                  <p className="text-blue-100">{lecturer.position}</p>
                 </div>
               </div>
               <div className="p-4">
-                <p className="text-gray-600 italic text-sm mb-3">&quot;{lecturer.quote}&quot;</p>
+                <p className="text-gray-600 text-sm mb-3 line-clamp-3">{lecturer.bio}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-blue-700 font-medium text-sm">{lecturer.specialization}</span>
-                  {/* Modal trigger removed */}
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{lecturer.category}</span>
                 </div>
               </div>
             </div>

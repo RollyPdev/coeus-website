@@ -125,23 +125,38 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: none !important; /* Ensure no lingering gradients */
+    background-image: none !important;
+    transition: background-color 0.2s ease;
   }
   
-  /* Ensure page backgrounds are contained */
+  /* Ensure page backgrounds are contained and prevent flashing */
   .enroll-page-container {
-    background-image: linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255)) !important;
+    background: linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255)) !important;
     background-attachment: local !important;
     isolation: isolate !important;
+    opacity: 1;
+    transition: opacity 0.3s ease;
   }
   
   .home-page-container {
-    background-image: linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254)) !important;
+    background: linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254)) !important;
     background-attachment: local !important;
     isolation: isolate !important;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+  
+  /* Prevent white flash during navigation */
+  html {
+    background-color: rgb(239 246 255);
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
+  }
+  
+  /* Prevent layout shift during navigation */
+  main {
+    min-height: calc(100vh - 80px);
   }
   h1 {
     @apply text-4xl md:text-5xl lg:text-6xl;

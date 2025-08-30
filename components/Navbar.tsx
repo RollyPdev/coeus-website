@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,9 +79,15 @@ const Navbar = () => {
               </div>
             </div>
             <Link href="/about" className="hover:text-blue-700 font-medium transition-colors">About Us</Link>
-            <Link href="/enroll" className="rounded-full bg-blue-700 text-white px-6 py-2 font-medium shadow-md hover:bg-blue-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
-              Enroll Now
+            <Link href="/attendance" className="hover:text-green-700 font-medium transition-colors flex items-center">
+              <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              Attendance
             </Link>
+            <button onClick={() => window.location.href = '/enroll'} className="rounded-full bg-blue-700 text-white px-6 py-2 font-medium shadow-md hover:bg-blue-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
+              Enroll Now
+            </button>
           </div>
           
           {/* Mobile menu button */}
@@ -133,14 +141,19 @@ const Navbar = () => {
           </div>
           
           <Link href="/about" onClick={closeMobileMenu} className="block py-2 hover:text-blue-700">About Us</Link>
+          <Link href="/attendance" onClick={closeMobileMenu} className="block py-2 hover:text-green-700 flex items-center">
+            <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            Mark Attendance
+          </Link>
           <div className="pt-2">
-            <Link 
-              href="/enroll" 
-              onClick={closeMobileMenu}
+            <button 
+              onClick={() => { closeMobileMenu(); window.location.href = '/enroll'; }}
               className="block w-full text-center rounded-full bg-blue-700 text-white px-6 py-2 font-medium shadow-md hover:bg-blue-800 transition-colors"
             >
               Enroll Now
-            </Link>
+            </button>
           </div>
         </div>
       </div>

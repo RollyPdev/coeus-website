@@ -1,27 +1,51 @@
-import React from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 
-const programs = [
-  {
-    title: 'Criminologist Licensure Review',
-    image: '/learning-1.jpg',
-    description: 'Comprehensive review program designed to prepare aspiring criminologists for the licensure examination with expert-led sessions and practice tests.',
-    features: ['Expert Lecturers', 'Mock Exams', 'Study Materials', 'Small Class Size']
-  },
-  {
-    title: 'Nursing Licensure Review',
-    image: '/background-image.jpg',
-    description: 'Intensive review program for nursing graduates featuring specialized modules covering all exam areas with hands-on clinical simulations.',
-    features: ['Clinical Simulations', 'Specialized Modules', 'Exam Techniques', 'Performance Analysis']
-  },
-  {
-    title: 'CPD Seminars',
-    image: '/background-image.jpg',
-    description: 'Professional development seminars for licensed professionals across various fields to earn continuing professional development units.',
-    features: ['Industry Updates', 'Networking', 'Certificate', 'Flexible Schedule']
-  }
-];
+interface Program {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  category: string;
+  features: string;
+  duration: number;
+  price: number;
+}
 
 const ProgramsSection = () => {
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await fetch('/api/programs');
+        if (response.ok) {
+          const data = await response.json();
+          setPrograms(data);
+        }
+      } catch (error) {
+        console.error('Error fetching programs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrograms();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-white to-blue-50" id="programs">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading programs...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="py-20 bg-gradient-to-b from-white to-blue-50" id="programs">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,15 +77,19 @@ const ProgramsSection = () => {
                 <div className="mb-6">
                   <h4 className="text-sm font-semibold text-blue-800 uppercase tracking-wider mb-3">Key Features</h4>
                   <ul className="space-y-2">
-                    {program.features.map((feature, i) => (
+                    {program.features.split(',').map((feature, i) => (
                       <li key={i} className="flex items-center text-gray-700">
                         <svg className="h-4 w-4 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        {feature}
+                        {feature.trim()}
                       </li>
                     ))}
                   </ul>
+                  <div className="mt-4 flex justify-between items-center">
+                    <span className="text-sm text-gray-600">{program.duration} weeks</span>
+                    <span className="text-lg font-bold text-blue-600">₱{program.price.toLocaleString()}</span>
+                  </div>
                 </div>
                 
                 <a 

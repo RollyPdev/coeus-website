@@ -186,6 +186,15 @@ export default function Home() {
             <p className="text-xl mb-8 max-w-2xl mx-auto">Join our review programs and take the first step towards achieving your professional goals.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <a 
+                href="/attendance" 
+                className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg flex items-center justify-center"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Mark Attendance
+              </a>
+              <a 
                 href="#contact" 
                 className="bg-white text-blue-700 hover:bg-blue-50 font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
               >

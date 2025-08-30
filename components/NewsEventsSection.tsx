@@ -1,10 +1,60 @@
 "use client";
-import React, { useState } from 'react';
-import { newsEvents } from '../data/newsEvents';
+import React, { useState, useEffect } from 'react';
+
+interface NewsEvent {
+  id: string;
+  title: string;
+  content: string;
+  summary: string;
+  image: string;
+  date: string;
+  category: string;
+  featured: boolean;
+}
 
 const NewsEventsSection = () => {
+  const [newsEvents, setNewsEvents] = useState<NewsEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedItem, setSelectedItem] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNewsEvents = async () => {
+      try {
+        const response = await fetch('/api/news-events');
+        if (response.ok) {
+          const data = await response.json();
+          setNewsEvents(data.map((item: any) => ({
+            ...item,
+            date: new Date(item.date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching news events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNewsEvents();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-white" id="news-events">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading news and events...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
   
   const filteredItems = activeTab === 'all' 
     ? newsEvents 
@@ -72,7 +122,7 @@ const NewsEventsSection = () => {
                   className="w-full h-full object-cover"
                 />
                 <div className={`absolute top-0 right-0 ${
-                  item.category === 'News' ? 'bg-blue-700' : 'bg-green-600'
+                  item.category.toLowerCase() === 'news' ? 'bg-blue-700' : 'bg-green-600'
                 } text-white px-3 py-1 rounded-bl-lg`}>
                   {item.category}
                 </div>
@@ -142,7 +192,7 @@ const NewsEventsSection = () => {
                 </svg>
               </button>
               <div className={`absolute top-4 left-4 ${
-                newsEvents.find(item => item.id === selectedItem)?.category === 'News' 
+                newsEvents.find(item => item.id === selectedItem)?.category.toLowerCase() === 'news' 
                   ? 'bg-blue-700' 
                   : 'bg-green-600'
               } text-white px-3 py-1 rounded-lg`}>

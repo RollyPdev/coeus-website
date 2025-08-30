@@ -6,7 +6,7 @@ import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import '../styles/receipt-styles.css';
+
 
 interface Region {
   code: string;
@@ -65,6 +65,8 @@ interface FormData {
   referredBy: string;
   howDidYouHear: string;
   agreeToTerms: boolean;
+  amount?: string;
+  paymentMethod?: string;
 }
 const EnrollmentForm = () => {
   const router = useRouter();
@@ -74,6 +76,7 @@ const EnrollmentForm = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [enrollmentId, setEnrollmentId] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // School dropdown states
   const [schoolSearch, setSchoolSearch] = useState('');
@@ -180,25 +183,45 @@ const EnrollmentForm = () => {
   
   // Fetch regions on component mount
   useEffect(() => {
-    fetchRegions();
+    const initializeForm = async () => {
+      await fetchRegions();
+      setIsLoading(false);
+    };
+    initializeForm();
   }, []);
   
   // Fetch regions from PSGC Cloud API
   const fetchRegions = async () => {
     try {
       setLoading(prev => ({ ...prev, regions: true }));
-      const response = await fetch('https://psgc.cloud/api/regions');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch('https://psgc.cloud/api/regions', {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      if (Array.isArray(data)) {
+      if (Array.isArray(data) && data.length > 0) {
         setRegions(data.map(region => ({
           code: region.code,
           name: region.name
         })));
       } else {
+        console.warn('API returned empty or invalid data, using fallback');
         setRegions(defaultRegionData);
       }
     } catch (error) {
-      console.error('Error fetching regions:', error);
+      console.warn('Failed to fetch regions from API, using fallback data:', error.message);
       setRegions(defaultRegionData);
     } finally {
       setLoading(prev => ({ ...prev, regions: false }));
@@ -351,7 +374,7 @@ const EnrollmentForm = () => {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
-      let updates = { [name]: value };
+      let updates: Partial<FormData> = { [name]: value };
       
       // Update course based on reviewType
       if (name === 'reviewType') {
@@ -546,35 +569,59 @@ const EnrollmentForm = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
     // Final validation
     if (!formData.agreeToTerms) {
       alert('Please agree to the Terms and Conditions before submitting.');
       setIsSubmitting(false);
       return;
     }
-    // For demo purposes, generate IDs locally
-    const newStudentId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const newEnrollmentId = `ENR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    // Build the receipt using the new IDs directly
-    const receipt = {
-      studentId: newStudentId,
-      enrollmentId: newEnrollmentId,
-      name: `${formData.firstName} ${formData.lastName}`,
-      reviewType: formData.reviewType,
-      date: new Date().toLocaleDateString()
-    };
-    // Save receipt for reference
-    window.localStorage.setItem('enrollmentReceipt', JSON.stringify(receipt));
-    window.localStorage.setItem('enrollmentFormData', JSON.stringify(formData));
-    // Set the IDs in state for UI
-    setEnrollmentId(newEnrollmentId);
-    setStudentId(newStudentId);
-    // Show success modal
-    setShowSuccessModal(true);
-    setIsSubmitting(false);
+    
+    try {
+      // Submit to database
+      const response = await fetch('/api/enrollments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Build the receipt using the IDs from database
+        const receipt = {
+          studentId: result.studentId,
+          enrollmentId: result.enrollmentId,
+          name: `${formData.firstName} ${formData.lastName}`,
+          reviewType: formData.reviewType,
+          date: new Date().toLocaleDateString()
+        };
+        
+        // Save receipt for reference
+        window.localStorage.setItem('enrollmentReceipt', JSON.stringify(receipt));
+        window.localStorage.setItem('enrollmentFormData', JSON.stringify(formData));
+        
+        // Set the IDs in state for UI
+        setEnrollmentId(result.enrollmentId);
+        setStudentId(result.studentId);
+        
+        // Show success modal
+        setShowSuccessModal(true);
+      } else {
+        console.error('API Error:', result);
+        alert(`Failed to submit enrollment: ${result.message || 'Unknown error'}. Please try again.`);
+      }
+    } catch (error) {
+      console.error('Error submitting enrollment:', error);
+      alert('Network error occurred while submitting your enrollment. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   const [barcodeDataUrl, setBarcodeDataUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -613,215 +660,250 @@ const EnrollmentForm = () => {
       const barcodeUrl = barcodeCanvas.toDataURL('image/png');
       const qrUrl = await QRCode.toDataURL(`${receipt.studentId}-${receipt.enrollmentId}`, { width: 128, margin: 1 });
 
-      // Create PDF with improved design
+      // Create PDF with premium design
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
-      // Set colors and styles
-      const blue = '#1e3a8a';
-      const lightBlue = '#3b82f6';
-      const gray = '#64748b';
-      const darkGray = '#1e293b';
-      const bgBlue = '#f0f7ff';
+      // Premium color palette
+      const primary = '#1e3a8a'; // Blue 900
+      const secondary = '#3b82f6'; // Blue 500
+      const accent = '#10b981'; // Emerald 500
+      const gray = '#64748b'; // Slate 500
+      const darkGray = '#1e293b'; // Slate 800
+      const lightGray = '#f8fafc'; // Slate 50
+      const white = '#ffffff';
       
-      // Add background pattern
-      pdf.setFillColor(250, 250, 252);
+      // Premium gradient background
+      pdf.setFillColor(248, 250, 252);
       pdf.rect(0, 0, 210, 297, 'F');
       
-      // Header with logo placeholder
-      pdf.setFillColor(blue);
-      pdf.roundedRect(0, 0, 210, 40, 0, 0, 'F');
+      // Add subtle pattern overlay
+      for (let i = 0; i < 210; i += 20) {
+        for (let j = 0; j < 297; j += 20) {
+          pdf.setFillColor(255, 255, 255, 0.3);
+          pdf.circle(i, j, 0.5, 'F');
+        }
+      }
       
-      // Logo circle
-      pdf.setFillColor(255, 255, 255, 0.2);
-      pdf.circle(30, 20, 12, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.text('CR', 30, 22, { align: 'center' });
+      // Premium header with gradient effect
+      pdf.setFillColor(30, 58, 138);
+      pdf.rect(0, 0, 210, 50, 'F');
       
-      // Header text
-      pdf.setFontSize(22);
-      pdf.setTextColor(255, 255, 255);
-      pdf.text('COEUS REVIEW CENTER', 105, 20, { align: 'center' });
-      pdf.setFontSize(12);
-      pdf.text('Official Enrollment Receipt', 105, 30, { align: 'center' });
+      // Add header accent line
+      pdf.setFillColor(16, 185, 129);
+      pdf.rect(0, 45, 210, 5, 'F');
       
-      // White card for content
+      // Company logo area with premium styling
+      pdf.setFillColor(255, 255, 255, 0.15);
+      pdf.roundedRect(20, 10, 50, 30, 5, 5, 'F');
+      pdf.setDrawColor(255, 255, 255, 0.3);
+      pdf.setLineWidth(1);
+      pdf.roundedRect(20, 10, 50, 30, 5, 5, 'S');
+      
+      // Premium logo design
       pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(15, 50, 180, 200, 5, 5, 'F');
-      pdf.setDrawColor(220, 220, 220);
-      pdf.roundedRect(15, 50, 180, 200, 5, 5, 'S');
+      pdf.circle(45, 25, 8, 'F');
+      pdf.setTextColor(30, 58, 138);
+      pdf.setFontSize(16);
+      pdf.text('CR', 45, 28, { align: 'center' });
       
-      // Receipt ID section
-      pdf.setFillColor(bgBlue);
-      pdf.roundedRect(25, 60, 160, 30, 3, 3, 'F');
+      // Company name with premium typography
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(28);
+      pdf.text('COEUS REVIEW CENTER', 105, 22, { align: 'center' });
+      pdf.setFontSize(12);
+      pdf.text('Excellence in Professional Review Education', 105, 32, { align: 'center' });
       
-      pdf.setTextColor(darkGray);
+      // Premium content card
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(15, 60, 180, 220, 8, 8, 'F');
+      pdf.setDrawColor(226, 232, 240);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(15, 60, 180, 220, 8, 8, 'S');
+      
+      // Add subtle shadow effect
+      pdf.setFillColor(0, 0, 0, 0.05);
+      pdf.roundedRect(16, 61, 180, 220, 8, 8, 'F');
+      
+      // Receipt title with premium styling
+      pdf.setFillColor(240, 249, 255);
+      pdf.roundedRect(25, 70, 160, 25, 5, 5, 'F');
+      pdf.setDrawColor(59, 130, 246);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(25, 70, 160, 25, 5, 5, 'S');
+      
+      pdf.setTextColor(30, 58, 138);
+      pdf.setFontSize(18);
+      pdf.text('OFFICIAL ENROLLMENT RECEIPT', 105, 85, { align: 'center' });
+      
+      // Premium enrollment info section
+      pdf.setFillColor(249, 250, 251);
+      pdf.roundedRect(25, 105, 160, 35, 5, 5, 'F');
+      
+      // Three-column layout for IDs
+      const colWidth = 50;
+      const startX = 30;
+      
+      // Student ID
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('STUDENT ID', startX, 115);
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(receipt.studentId, startX, 122);
+      
+      // Enrollment ID
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('ENROLLMENT ID', startX + colWidth, 115);
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(receipt.enrollmentId, startX + colWidth, 122);
+      
+      // Date
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('DATE ENROLLED', startX + (colWidth * 2), 115);
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(receipt.date, startX + (colWidth * 2), 122);
+      
+      // Status badge
+      pdf.setFillColor(245, 158, 11);
+      pdf.roundedRect(140, 125, 40, 12, 6, 6, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(10);
+      pdf.text('PENDING', 160, 133, { align: 'center' });
+      
+      // Student details section with premium grid
+      pdf.setTextColor(30, 58, 138);
       pdf.setFontSize(14);
-      pdf.text('Enrollment Information', 105, 70, { align: 'center' });
-      
-      // Student details in a grid layout
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Student ID', 35, 80);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(receipt.studentId, 35, 85);
-      
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Enrollment ID', 105, 80);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(receipt.enrollmentId, 105, 85);
-      
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Date Enrolled', 165, 80);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(receipt.date, 165, 85);
-      
-      // Student details section
-      pdf.setFontSize(14);
-      pdf.setTextColor(darkGray);
-      pdf.text('Student Details', 105, 105, { align: 'center' });
+      pdf.text('Student Information', 105, 155, { align: 'center' });
       
       // Decorative line
-      pdf.setDrawColor(lightBlue);
-      pdf.setLineWidth(0.5);
-      pdf.line(65, 108, 145, 108);
+      pdf.setDrawColor(59, 130, 246);
+      pdf.setLineWidth(1);
+      pdf.line(70, 158, 140, 158);
       
-      // Student info in a cleaner layout
-      pdf.setFillColor(bgBlue);
-      pdf.roundedRect(25, 115, 160, 60, 3, 3, 'F');
+      // Premium info grid
+      const infoY = 170;
+      const rowHeight = 18;
       
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Full Name', 35, 125);
+      // Row 1
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(25, infoY, 160, rowHeight, 3, 3, 'F');
+      
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('FULL NAME', 30, infoY + 6);
       pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(receipt.name, 35, 130);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(receipt.name, 30, infoY + 12);
       
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Program Type', 35, 140);
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('PROGRAM', 110, infoY + 6);
       pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(receipt.reviewType, 35, 145);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(receipt.reviewType, 110, infoY + 12);
       
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Contact Number', 105, 125);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(formData.contactNumber || 'N/A', 105, 130);
-      
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Email Address', 105, 140);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(formData.email || 'N/A', 105, 145);
-      
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('School', 35, 155);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(formData.schoolName || 'N/A', 35, 160);
-      
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Year Graduated', 105, 155);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(formData.yearGraduated || 'N/A', 105, 160);
-      
-      pdf.setFontSize(9);
-      pdf.setTextColor(gray);
-      pdf.text('Guardian', 35, 170);
-      pdf.setFontSize(11);
-      pdf.setTextColor(darkGray);
-      pdf.text(`${formData.guardianFirstName} ${formData.guardianLastName}` || 'N/A', 35, 175);
-      
-      // Enrollment Status section
-      pdf.setFontSize(14);
-      pdf.setTextColor(darkGray);
-      pdf.text('Enrollment Status', 105, 190, { align: 'center' });
-      
-      // Decorative line
-      pdf.setDrawColor(lightBlue);
-      pdf.setLineWidth(0.5);
-      pdf.line(65, 193, 145, 193);
-      
-      // Status box
-      pdf.setFillColor('#f0f9ff');
-      pdf.roundedRect(25, 200, 160, 30, 3, 3, 'F');
-      pdf.setDrawColor('#bfdbfe');
-      pdf.roundedRect(25, 200, 160, 30, 3, 3, 'S');
-      
-      // Status details
-      pdf.setFontSize(12);
-      pdf.setTextColor(blue);
-      pdf.text('ENROLLED', 105, 215, { align: 'center' });
-      pdf.setFontSize(10);
-      pdf.setTextColor(darkGray);
-      pdf.text('Successfully registered for the review program', 105, 225, { align: 'center' });
-      
-      // Codes section with better layout
-      pdf.setFillColor(bgBlue);
-      pdf.roundedRect(25, 240, 160, 35, 3, 3, 'F');
-      
-      // Barcode with container - centered
+      // Row 2
       pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(30, 245, 90, 25, 2, 2, 'F');
-      pdf.addImage(barcodeUrl, 'PNG', 35, 250, 80, 15);
+      pdf.roundedRect(25, infoY + rowHeight + 2, 160, rowHeight, 3, 3, 'F');
       
-      // Add barcode label
       pdf.setFontSize(8);
-      pdf.setTextColor(gray);
-      pdf.text(receipt.studentId, 75, 270, { align: 'center' });
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('CONTACT', 30, infoY + rowHeight + 8);
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(formData.contactNumber || 'N/A', 30, infoY + rowHeight + 14);
       
-      // QR code with container - properly aligned
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('EMAIL', 110, infoY + rowHeight + 8);
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(formData.email || 'N/A', 110, infoY + rowHeight + 14);
+      
+      // Row 3
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(25, infoY + (rowHeight + 2) * 2, 160, rowHeight, 3, 3, 'F');
+      
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('SCHOOL', 30, infoY + (rowHeight + 2) * 2 + 6);
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(formData.schoolName || 'N/A', 30, infoY + (rowHeight + 2) * 2 + 12);
+      
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('YEAR GRADUATED', 110, infoY + (rowHeight + 2) * 2 + 6);
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(formData.yearGraduated || 'N/A', 110, infoY + (rowHeight + 2) * 2 + 12);
+      
+      // Premium codes section
+      pdf.setFillColor(240, 249, 255);
+      pdf.roundedRect(25, 240, 160, 30, 5, 5, 'F');
+      pdf.setDrawColor(59, 130, 246);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(25, 240, 160, 30, 5, 5, 'S');
+      
+      // Barcode container with premium styling
       pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(130, 245, 40, 25, 2, 2, 'F');
-      pdf.addImage(qrUrl, 'PNG', 135, 245, 30, 25);
+      pdf.roundedRect(30, 245, 85, 20, 3, 3, 'F');
+      pdf.setDrawColor(226, 232, 240);
+      pdf.roundedRect(30, 245, 85, 20, 3, 3, 'S');
+      pdf.addImage(barcodeUrl, 'PNG', 35, 248, 75, 14);
       
-      // Verification code - moved below the barcode/QR code section
-      pdf.setFillColor(255, 255, 255, 0.2);
-      pdf.roundedRect(55, 280, 100, 8, 4, 4, 'F');
-      pdf.setFontSize(8);
+      // QR code container with premium styling
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(125, 245, 25, 20, 3, 3, 'F');
+      pdf.setDrawColor(226, 232, 240);
+      pdf.roundedRect(125, 245, 25, 20, 3, 3, 'S');
+      pdf.addImage(qrUrl, 'PNG', 128, 247, 19, 16);
+      
+      // Verification badge
+      pdf.setFillColor(30, 58, 138);
+      pdf.roundedRect(155, 245, 25, 20, 3, 3, 'F');
       pdf.setTextColor(255, 255, 255);
-      pdf.text(`VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}`, 105, 285, { align: 'center' });
-      
-      // Footer with better spacing
-      pdf.setFillColor(blue);
-      pdf.rect(0, 287, 210, 20, 'F');
-      
-      // Thank you message
-      pdf.setFontSize(10);
-      pdf.setTextColor(255, 255, 255);
-      pdf.text('Thank you for choosing Coeus Review & Training Specialist, Inc.', 105, 294, { align: 'center' });
-      
-      // Contact info with better spacing - using plain text instead of emojis
       pdf.setFontSize(8);
-      pdf.text('Address: Roxas City, Capiz', 50, 300, { align: 'center' });
-      pdf.text('Phone: (036) 621-0000', 105, 300, { align: 'center' });
-      pdf.text('Email: info@coeusreview.com', 160, 300, { align: 'center' });
+      pdf.text('VERIFIED', 167.5, 252, { align: 'center' });
+      pdf.setFontSize(6);
+      pdf.text(new Date().getFullYear().toString(), 167.5, 258, { align: 'center' });
       
-      // Save the PDF
-      pdf.save(`Coeus-Receipt-${receipt.studentId}.pdf`);
-      pdf.setFontSize(8);
+      // Premium footer
+      pdf.setFillColor(30, 58, 138);
+      pdf.rect(0, 280, 210, 17, 'F');
+      
+      // Footer content with better spacing
       pdf.setTextColor(255, 255, 255);
-      pdf.text(`VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}`, 105, 272, { align: 'center' });
+      pdf.setFontSize(11);
+      pdf.text('Thank you for choosing Coeus Review & Training Specialist, Inc.', 105, 287, { align: 'center' });
       
-      // Save the PDF
-      pdf.save(`Coeus-Receipt-${receipt.studentId}.pdf`);
+      pdf.setFontSize(8);
+      pdf.text('Roxas City, Capiz  •  (036) 621-0000  •  info@coeusreview.com', 105, 293, { align: 'center' });
+      
+      // Add watermark
+      pdf.setTextColor(0, 0, 0, 0.05);
+      pdf.setFontSize(60);
+      pdf.text('COEUS', 105, 150, { align: 'center', angle: 45 });
+      
+      // Save the PDF with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10);
+      pdf.save(`Coeus-Receipt-${receipt.studentId}-${timestamp}.pdf`);
     }
+  };
+
+  // Helper function to escape HTML to prevent XSS
+  const escapeHtml = (text: string): string => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   };
 
   const handlePrintReceipt = async () => {
@@ -852,7 +934,7 @@ const EnrollmentForm = () => {
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Coeus Receipt - ${receipt.studentId}</title>
+            <title>Coeus Receipt - ${escapeHtml(receipt.studentId)}</title>
             <style>
               @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
               * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -902,19 +984,19 @@ const EnrollmentForm = () => {
                   <div class="info-grid">
                     <div class="info-item">
                       <div class="info-label">Student ID</div>
-                      <div class="info-value">${receipt.studentId}</div>
+                      <div class="info-value">${escapeHtml(receipt.studentId)}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">Enrollment ID</div>
-                      <div class="info-value">${receipt.enrollmentId}</div>
+                      <div class="info-value">${escapeHtml(receipt.enrollmentId)}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">Date Enrolled</div>
-                      <div class="info-value">${receipt.date}</div>
+                      <div class="info-value">${escapeHtml(receipt.date)}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">Program Type</div>
-                      <div class="info-value">${receipt.reviewType}</div>
+                      <div class="info-value">${escapeHtml(receipt.reviewType)}</div>
                     </div>
                   </div>
                 </div>
@@ -924,36 +1006,36 @@ const EnrollmentForm = () => {
                   <div class="info-grid">
                     <div class="info-item">
                       <div class="info-label">Full Name</div>
-                      <div class="info-value">${receipt.name}</div>
+                      <div class="info-value">${escapeHtml(receipt.name)}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">Contact Number</div>
-                      <div class="info-value">${formData.contactNumber || 'N/A'}</div>
+                      <div class="info-value">${escapeHtml(formData.contactNumber || 'N/A')}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">Email Address</div>
-                      <div class="info-value">${formData.email || 'N/A'}</div>
+                      <div class="info-value">${escapeHtml(formData.email || 'N/A')}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">School</div>
-                      <div class="info-value">${formData.schoolName || 'N/A'}</div>
+                      <div class="info-value">${escapeHtml(formData.schoolName || 'N/A')}</div>
                     </div>
                   </div>
                 </div>
                 <div class="decorative-line"></div>
                 <div class="payment-section">
                   <div class="payment-total">
-                    <span>Enrollment Status</span>
-                    <span style="color: #10b981; font-weight: bold;">ENROLLED</span>
+                    <span>Application Status</span>
+                    <span style="color: #f59e0b; font-weight: bold;">PENDING</span>
                   </div>
                   <div class="payment-details">
                     <div class="info-item">
                       <div class="info-label">Year Graduated</div>
-                      <div class="info-value">${formData.yearGraduated || 'N/A'}</div>
+                      <div class="info-value">${escapeHtml(formData.yearGraduated || 'N/A')}</div>
                     </div>
                     <div class="info-item">
                       <div class="info-label">Guardian</div>
-                      <div class="info-value">${formData.guardianFirstName} ${formData.guardianLastName}</div>
+                      <div class="info-value">${escapeHtml(formData.guardianFirstName)} ${escapeHtml(formData.guardianLastName)}</div>
                     </div>
                   </div>
                 </div>
@@ -961,7 +1043,7 @@ const EnrollmentForm = () => {
                   <div class="barcode-container">
                     <div class="barcode">
                       <img src="${barcodeUrl}" alt="Barcode" width="180" height="40" />
-                      <div class="barcode-text">${receipt.studentId}</div>
+                      <div class="barcode-text">${escapeHtml(receipt.studentId)}</div>
                     </div>
                   </div>
                   <div class="qr-container">
@@ -981,7 +1063,7 @@ const EnrollmentForm = () => {
                   <span class="contact-item">Email: info@coeusreview.com</span>
                 </div>
                 <div class="verification-code">
-                  VERIFICATION: ${receipt.studentId}-${new Date().getFullYear()}
+                  VERIFICATION: ${escapeHtml(receipt.studentId)}-${new Date().getFullYear()}
                 </div>
               </div>
             </div>
@@ -999,6 +1081,17 @@ const EnrollmentForm = () => {
       }
     }
   };
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading enrollment form...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
       <h2 className="text-2xl md:text-3xl font-bold text-blue-900 mb-4 text-center">Enrollment Form</h2>
@@ -1914,7 +2007,7 @@ const EnrollmentForm = () => {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Status</p>
-                      <p className="font-medium text-green-600">ENROLLED</p>
+                      <p className="font-medium text-yellow-600">PENDING</p>
                     </div>
                   </div>
                 </div>

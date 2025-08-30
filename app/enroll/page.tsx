@@ -1,26 +1,38 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import EnrollmentForm from '../../components/EnrollmentForm';
 import '../../styles/enrollment-styles.css';
 
 export default function EnrollPage() {
-  // Force correct background on component mount and cleanup on unmount
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    const enrollContainer = document.querySelector('.enroll-page-container');
-    if (enrollContainer) {
-      (enrollContainer as HTMLElement).style.background = 'linear-gradient(to bottom, rgb(239 246 255), rgb(255 255 255))';
-    }
-    
-    // Cleanup function to reset any persistent styles
-    return () => {
-      // Remove any home page styles that might persist
-      const homeContainers = document.querySelectorAll('.home-page-container');
-      homeContainers.forEach(container => {
-        (container as HTMLElement).style.background = '';
+    // Ensure proper page initialization
+    const initializePage = () => {
+      // Clear any conflicting styles from other pages
+      document.body.style.background = 'transparent';
+      
+      // Remove any lingering page containers
+      const existingContainers = document.querySelectorAll('.home-page-container, .enroll-page-container');
+      existingContainers.forEach(container => {
+        if (container !== document.querySelector('.enroll-page-container')) {
+          container.remove();
+        }
       });
+      
+      // Set loading to false after initialization
+      setIsLoading(false);
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(initializePage);
+    
+    return () => {
+      // Cleanup on unmount
+      document.body.style.background = '';
     };
   }, []);
   return (
@@ -35,7 +47,7 @@ export default function EnrollPage() {
             </p>
           </div>
           
-          <EnrollmentForm />
+          {!isLoading && <EnrollmentForm />}
         </div>
       </main>
       <Footer />

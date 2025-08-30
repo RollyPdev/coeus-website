@@ -8,6 +8,7 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  fallback: ["system-ui", "arial"],
 });
 
 export const viewport: Viewport = {

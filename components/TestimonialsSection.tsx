@@ -1,55 +1,21 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 
-const testimonials = [
-  { 
-    name: 'Maria Santos', 
-    role: 'Criminology Graduate',
-    text: 'Coeus helped me pass my exam with flying colors! The review materials were comprehensive and the practice tests prepared me well for the actual exam.',
-    image: '/learning-1.jpg',
-    rating: 5
-  },
-  { 
-    name: 'Juan Dela Cruz', 
-    role: 'Nursing Student',
-    text: 'The lecturers are very knowledgeable and supportive. They go above and beyond to ensure we understand complex concepts.',
-    image: '/image-1.jpg',
-    rating: 5
-  },
-  { 
-    name: 'Ana Reyes', 
-    role: 'Licensed Nurse',
-    text: 'Highly recommend their review programs! I was struggling with certain topics but their specialized approach helped me overcome my challenges.',
-    image: '/image-2.jpg',
-    rating: 4
-  },
-  { 
-    name: 'Carlos Mendoza', 
-    role: 'Criminology Student',
-    text: 'The mock exams were incredibly helpful in identifying my weak areas. Thanks to Coeus, I passed on my first attempt!',
-    image: '/image-3.jpg',
-    rating: 5
-  },
-  { 
-    name: 'Sofia Garcia', 
-    role: 'CPD Seminar Attendee',
-    text: 'The professional development seminars are excellent. I gained valuable insights and practical knowledge that I apply in my daily work.',
-    image: '/background-image.jpg',
-    rating: 5
-  },
-];
+interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  text: string;
+  image: string;
+  rating: number;
+}
 
 const TestimonialsSection = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  
-  // Calculate the indices of visible testimonials (3 at a time)
-  const visibleIndices = [
-    currentIndex,
-    (currentIndex + 1) % testimonials.length,
-    (currentIndex + 2) % testimonials.length
-  ];
-  
+
   // Auto-advance the slider
   const nextSlide = useCallback(() => {
     if (isAnimating) return;
@@ -57,14 +23,30 @@ const TestimonialsSection = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
     setTimeout(() => setIsAnimating(false), 500);
   }, [isAnimating, testimonials.length]);
-  
-  const prevSlide = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-    setTimeout(() => setIsAnimating(false), 500);
-  };
-  
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const response = await fetch('/api/testimonials');
+        if (response.ok) {
+          const data = await response.json();
+          setTestimonials(data);
+        }
+      } catch (error) {
+        console.error('Error fetching testimonials:', error);
+        // Fallback to static data
+        setTestimonials([
+          { id: '1', name: 'Maria Santos', role: 'Criminology Graduate', text: 'Coeus helped me pass my exam with flying colors!', image: '/learning-1.jpg', rating: 5 },
+          { id: '2', name: 'Juan Dela Cruz', role: 'Nursing Student', text: 'The lecturers are very knowledgeable and supportive.', image: '/image-1.jpg', rating: 5 }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTestimonials();
+  }, []);
+
   // Auto-advance every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -72,6 +54,33 @@ const TestimonialsSection = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [nextSlide]);
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-blue-50 to-white" id="testimonials">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading testimonials...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  
+  // Calculate the indices of visible testimonials (3 at a time)
+  const visibleIndices = testimonials.length > 0 ? [
+    currentIndex,
+    (currentIndex + 1) % testimonials.length,
+    (currentIndex + 2) % testimonials.length
+  ] : [];
+  
+  const prevSlide = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setTimeout(() => setIsAnimating(false), 500);
+  };
   
   // Generate star rating
   const renderStars = (rating: number) => {

@@ -1,9 +1,45 @@
-import React from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { criminologyLecturers } from "../../data/criminologyLecturers";
+
+interface Lecturer {
+  id: string;
+  name: string;
+  photo: string;
+  position: string;
+  credentials: string;
+  bio: string;
+  specialization: string;
+  subjects: string;
+}
 
 export default function CriminologyLecturersPage() {
+  const [lecturers, setLecturers] = useState<Lecturer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLecturers = async () => {
+      try {
+        const response = await fetch('/api/lecturers');
+        if (response.ok) {
+          const data = await response.json();
+          const criminologyLecturers = data.filter((lecturer: Lecturer) => 
+            lecturer.specialization?.toLowerCase().includes('criminal') ||
+            lecturer.subjects?.toLowerCase().includes('criminal') ||
+            lecturer.position?.toLowerCase().includes('criminology')
+          );
+          setLecturers(criminologyLecturers);
+        }
+      } catch (error) {
+        console.error('Error fetching lecturers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLecturers();
+  }, []);
   return (
     <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <Navbar />
@@ -29,8 +65,14 @@ export default function CriminologyLecturersPage() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {criminologyLecturers.map((lecturer, idx) => (
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading lecturers...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {lecturers.map((lecturer, idx) => (
                 <div 
                   key={idx} 
                   className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
@@ -53,12 +95,12 @@ export default function CriminologyLecturersPage() {
                     
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Subjects</h4>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {lecturer.subjects.map((subject, i) => (
+                      {lecturer.subjects.split(',').map((subject, i) => (
                         <span 
                           key={i} 
                           className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
                         >
-                          {subject}
+                          {subject.trim()}
                         </span>
                       ))}
                     </div>
@@ -73,8 +115,9 @@ export default function CriminologyLecturersPage() {
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
         

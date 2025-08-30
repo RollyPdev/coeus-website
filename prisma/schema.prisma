@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -103,20 +103,35 @@ model Student {
   middleInitial       String?
   gender              String
   birthday            DateTime
+  age                 Int?
   birthPlace          String
   contactNumber       String
   email               String
   address             String
+  region              String?
+  province            String?
+  city                String?
+  barangay            String?
+  zipCode             String?
   guardianFirstName   String
   guardianLastName    String
   guardianMiddleInitial String?
   guardianContact     String
   guardianAddress     String
+  relationship        String?
+  schoolName          String?
+  course              String?
+  yearGraduated       String?
+  howDidYouHear       String?
+  referredBy          String?
+  photo               String?  // Base64 encoded image data
   photoUrl            String?
   status              String   @default("active") // active, inactive, graduated
   enrollments         Enrollment[]
   attendances         Attendance[]
   examResults         ExamResult[]
+  goodMorals          GoodMoral[]
+  scheduleAttendances ScheduleAttendance[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
@@ -180,4 +195,50 @@ model Payment {
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model GoodMoral {
+  id                  String   @id @default(cuid())
+  certificateNumber   String   @unique
+  student             Student  @relation(fields: [studentId], references: [id])
+  studentId           String
+  purpose             String
+  issuedDate          DateTime
+  validUntil          DateTime
+  status              String   @default("active") // active, expired, revoked
+  issuedBy            String
+  remarks             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Schedule {
+  id                  String   @id @default(cuid())
+  title               String
+  description         String?
+  startTime           DateTime
+  endTime             DateTime
+  subject             String
+  instructor          String
+  room                String?
+  type                String   // class, exam, event
+  attendances         ScheduleAttendance[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model ScheduleAttendance {
+  id                  String   @id @default(cuid())
+  schedule            Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId          String
+  student             Student  @relation(fields: [studentId], references: [id])
+  studentId           String
+  status              String   // present, absent, late, excused
+  timeIn              DateTime?
+  timeOut             DateTime?
+  remarks             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([scheduleId, studentId])
 }
