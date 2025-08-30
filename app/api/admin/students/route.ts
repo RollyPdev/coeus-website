@@ -46,8 +46,22 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await db.student.delete({
-      where: { id }
+    // Delete related records first to avoid foreign key constraints
+    await db.$transaction(async (tx: any) => {
+      // Delete good moral certificates
+      await tx.goodMoral.deleteMany({
+        where: { studentId: id }
+      });
+      
+      // Delete enrollments
+      await tx.enrollment.deleteMany({
+        where: { studentId: id }
+      });
+      
+      // Finally delete the student
+      await tx.student.delete({
+        where: { id }
+      });
     });
 
     return NextResponse.json({ success: true });
