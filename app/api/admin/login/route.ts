@@ -1,42 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import prisma from '@/lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'coeus-admin-secret-key';
-
+// Simple login without external dependencies
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Find user in database
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    // Simple hardcoded admin credentials for now
+    const validCredentials = [
+      { email: 'admin@coeus.com', password: 'admin123' },
+      { email: 'coeus@admin.com', password: 'admin123' }
+    ];
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { email: user.email, userId: user.id, role: 'admin' },
-      JWT_SECRET,
-      { expiresIn: '24h' }
+    const isValid = validCredentials.some(
+      cred => cred.email === email && cred.password === password
     );
+
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Simple token (base64 encoded email + timestamp)
+    const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
 
     return NextResponse.json({
       success: true,
@@ -46,7 +33,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { success: false, message: 'Server error' },
+      { success: false, message: `Server error: ${error.message}` },
       { status: 500 }
     );
   }
