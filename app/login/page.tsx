@@ -15,15 +15,21 @@ export default function Login() {
     const token = localStorage.getItem('adminToken');
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const currentTime = Date.now() / 1000;
-        if (payload.exp > currentTime) {
-          router.push('/admin');
-          return;
+        // For our simplified base64 token, just check if it exists and is valid
+        const decoded = atob(token);
+        if (decoded.includes(':')) {
+          const [email, timestamp] = decoded.split(':');
+          const tokenAge = Date.now() - parseInt(timestamp);
+          // Token valid for 24 hours (86400000 ms)
+          if (tokenAge < 86400000) {
+            router.push('/admin');
+            return;
+          }
         }
       } catch (error) {
-        localStorage.removeItem('adminToken');
+        // Invalid token format
       }
+      localStorage.removeItem('adminToken');
     }
   }, [router]);
 
@@ -47,9 +53,10 @@ export default function Login() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         localStorage.setItem('adminToken', data.token);
-        router.push('/admin');
+        // Force navigation to admin dashboard
+        window.location.href = '/admin';
       } else {
         setError(data.message || 'Login failed');
       }

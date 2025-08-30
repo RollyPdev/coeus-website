@@ -1,49 +1,138 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface GoodMoralCertificate {
   id: string;
   certificateNumber: string;
   studentId: string;
-  studentName: string;
   purpose: string;
   issuedDate: string;
   validUntil: string;
   status: 'active' | 'expired' | 'revoked';
+  issuedBy: string;
+  remarks?: string;
+  student: {
+    firstName: string;
+    lastName: string;
+    studentId: string;
+  };
+}
+
+interface Student {
+  id: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 export default function GoodMoralPage() {
   const [certificates, setCertificates] = useState<GoodMoralCertificate[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [issuing, setIssuing] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
 
-  const generateCertificateNumber = () => {
-    const year = new Date().getFullYear();
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `GM-${year}-${random}`;
+  useEffect(() => {
+    fetchCertificates();
+    fetchStudents();
+  }, []);
+
+  const fetchCertificates = async () => {
+    try {
+      const response = await fetch('/api/admin/good-moral');
+      if (response.ok) {
+        const data = await response.json();
+        setCertificates(data);
+      }
+    } catch (error) {
+      console.error('Error fetching certificates:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleIssueCertificate = (studentId: string, purpose: string) => {
-    const newCertificate: GoodMoralCertificate = {
-      id: Math.random().toString(36).substring(2),
-      certificateNumber: generateCertificateNumber(),
-      studentId,
-      studentName: `Student ${studentId}`,
-      purpose,
-      issuedDate: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'active'
-    };
+  const fetchStudents = async () => {
+    try {
+      const response = await fetch('/api/admin/students');
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(data);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    }
+  };
+
+  const handleIssueCertificate = async (purpose: string, remarks?: string) => {
+    if (!selectedStudent) return;
     
-    setCertificates(prev => [newCertificate, ...prev]);
-    setShowIssueModal(false);
+    setIssuing(true);
+    try {
+      const response = await fetch('/api/admin/good-moral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: selectedStudent.id,
+          purpose,
+          remarks,
+          issuedBy: 'Admin'
+        })
+      });
+      
+      if (response.ok) {
+        await fetchCertificates();
+        setShowIssueModal(false);
+        setSelectedStudent(null);
+        setStudentSearch('');
+      }
+    } catch (error) {
+      console.error('Error issuing certificate:', error);
+    } finally {
+      setIssuing(false);
+    }
   };
+
+  const handleRevokeCertificate = async (id: string) => {
+    if (!confirm('Are you sure you want to revoke this certificate?')) return;
+    
+    try {
+      const response = await fetch('/api/admin/good-moral', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'revoked' })
+      });
+      
+      if (response.ok) {
+        await fetchCertificates();
+      }
+    } catch (error) {
+      console.error('Error revoking certificate:', error);
+    }
+  };
+
+  const handlePrintCertificate = (cert: GoodMoralCertificate) => {
+    window.open(`/api/admin/good-moral/print/${cert.id}`, '_blank');
+  };
+
+  const handleDownloadCertificate = (cert: GoodMoralCertificate) => {
+    window.open(`/api/admin/good-moral/download/${cert.id}`, '_blank');
+  };
+
+  const filteredStudents = students.filter(student =>
+    `${student.firstName} ${student.lastName}`.toLowerCase().includes(studentSearch.toLowerCase()) ||
+    student.studentId.toLowerCase().includes(studentSearch.toLowerCase())
+  );
 
   const filteredCertificates = certificates.filter(cert =>
-    cert.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${cert.student.firstName} ${cert.student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cert.certificateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cert.studentId.toLowerCase().includes(searchTerm.toLowerCase())
+    cert.student.studentId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
