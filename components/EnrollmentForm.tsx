@@ -380,7 +380,7 @@ const EnrollmentForm = () => {
       if (name === 'reviewType') {
         if (value === 'Nursing Review') {
           updates.course = 'Bachelor of Science in Nursing';
-        } else if (value === 'Criminologist Review') {
+        } else if (value === 'Review for Criminology Licensure Examination') {
           updates.course = 'Bachelor of Science in Criminology';
         } else {
           updates.course = '';
@@ -1144,7 +1144,7 @@ const EnrollmentForm = () => {
                 >
                   <option value="">Select a review program</option>
                   <option value="Nursing Review">Nursing Review</option>
-                  <option value="Criminologist Review">Criminology Review</option>
+                  <option value="Review for Criminology Licensure Examination">Review for Criminology Licensure Examination</option>
                 </select>
               </div>
               
