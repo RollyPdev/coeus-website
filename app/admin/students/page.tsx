@@ -33,6 +33,7 @@ interface Student {
   referredBy?: string;
   photo?: string;
   photoUrl?: string;
+  hasPhoto?: boolean;
   status: string;
   createdAt: string;
   enrollments?: {
@@ -46,6 +47,13 @@ interface Student {
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
+  const [photoStatus, setPhotoStatus] = useState<Record<string, boolean>>({});
+  const [dashboardStats, setDashboardStats] = useState({
+    students: { total: 0, active: 0, pending: 0, graduated: 0 },
+    enrollments: { total: 0, active: 0 },
+    payments: { total: 0 }
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -111,16 +119,24 @@ export default function StudentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [fileInputRef, setFileInputRef] = useState<HTMLInputElement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/admin/students?limit=50');
+        const response = await fetch('/api/admin/students?limit=1000');
         const data = await response.json();
         console.log('API Response:', data);
         if (data.students) {
           setStudents(data.students);
+          // Fetch enrollment counts and photo status for these students
+          const studentIds = data.students.map((s: any) => s.id).join(',');
+          if (studentIds) {
+            fetchEnrollmentCounts(studentIds);
+            fetchPhotoStatus(studentIds);
+          }
         } else if (data.error) {
           console.error('API Error:', data.error);
           setStudents([]);
@@ -135,7 +151,45 @@ export default function StudentsPage() {
       }
     };
 
+    const fetchEnrollmentCounts = async (studentIds: string) => {
+      try {
+        const response = await fetch(`/api/admin/students/enrollment-counts?ids=${studentIds}`);
+        const data = await response.json();
+        if (data.counts) {
+          setEnrollmentCounts(data.counts);
+        }
+      } catch (error) {
+        console.error('Failed to fetch enrollment counts:', error);
+      }
+    };
+
+    const fetchPhotoStatus = async (studentIds: string) => {
+      try {
+        const response = await fetch(`/api/admin/students/photo-status?ids=${studentIds}`);
+        const data = await response.json();
+        console.log('Photo status response:', data);
+        if (data.photoStatus) {
+          setPhotoStatus(data.photoStatus);
+        }
+      } catch (error) {
+        console.error('Failed to fetch photo status:', error);
+      }
+    };
+
+    const fetchDashboardStats = async () => {
+      try {
+        const response = await fetch('/api/admin/dashboard');
+        const data = await response.json();
+        if (data.stats) {
+          setDashboardStats(data.stats);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      }
+    };
+
     fetchStudents();
+    fetchDashboardStats();
     fetchRegions();
   }, []);
 
@@ -262,7 +316,7 @@ export default function StudentsPage() {
     if (name === 'reviewType') {
       if (value === 'Nursing Review') {
         updates.course = 'Bachelor of Science in Nursing';
-      } else if (value === 'Criminologist Review') {
+      } else if (value === 'Criminology Review') {
         updates.course = 'Bachelor of Science in Criminology';
       } else {
         updates.course = '';
@@ -479,6 +533,58 @@ export default function StudentsPage() {
     setBarangays([]);
   };
 
+  const handleExport = async (format: 'csv' | 'zip') => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('format', format);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (searchTerm) params.append('search', searchTerm);
+
+      // Show progress for ZIP exports since they take longer
+      if (format === 'zip') {
+        alert('Preparing ZIP export with photos and QR codes. This may take a few moments...');
+      }
+
+      const response = await fetch(`/api/admin/students/export?${params}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Export failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition
+        ? contentDisposition.split('filename="')[1]?.replace('"', '')
+        : `students-export-${new Date().toISOString().split('T')[0]}.${format === 'zip' ? 'zip' : 'csv'}`;
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setShowExportModal(false);
+      
+      // Success message
+      if (format === 'zip') {
+        alert(`Successfully exported ${filteredStudents.length} students with photos and QR codes!`);
+      } else {
+        alert(`Successfully exported ${filteredStudents.length} students to CSV!`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert(`Failed to export students data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
 
 
   return (
@@ -492,11 +598,22 @@ export default function StudentsPage() {
               <p className="text-gray-600 mt-1">Manage and monitor student information and enrollment status</p>
             </div>
             <div className="mt-4 sm:mt-0 flex space-x-3">
-              <button className="inline-flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium text-gray-700 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg hover:shadow-xl transition-all duration-300">
-                <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export
+              <button 
+                onClick={() => setShowExportModal(true)}
+                disabled={isExporting}
+                className="inline-flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium text-gray-700 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? (
+                  <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )}
+                {isExporting ? 'Exporting...' : 'Export'}
               </button>
               <button 
                 onClick={() => setShowAddModal(true)}
@@ -520,7 +637,7 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Total Students</p>
-                <p className="text-3xl font-bold text-gray-900">{students.length}</p>
+                <p className="text-3xl font-bold text-gray-900">{dashboardStats.students.total}</p>
                 <div className="flex items-center mt-2">
                   <div className="w-2 h-2 rounded-full mr-2 bg-blue-500"></div>
                   <span className="text-xs font-medium text-blue-600">All registered</span>
@@ -538,7 +655,7 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Active Students</p>
-                <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.status === 'active').length}</p>
+                <p className="text-3xl font-bold text-gray-900">{dashboardStats.students.active}</p>
                 <div className="flex items-center mt-2">
                   <div className="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
                   <span className="text-xs font-medium text-green-600">Currently enrolled</span>
@@ -556,7 +673,7 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Pending Students</p>
-                <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.status === 'pending' || s.status === 'inactive').length}</p>
+                <p className="text-3xl font-bold text-gray-900">{dashboardStats.students.pending}</p>
                 <div className="flex items-center mt-2">
                   <div className="w-2 h-2 rounded-full mr-2 bg-amber-500"></div>
                   <span className="text-xs font-medium text-amber-600">Awaiting verification</span>
@@ -574,7 +691,7 @@ export default function StudentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Graduated</p>
-                <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.status === 'graduated').length}</p>
+                <p className="text-3xl font-bold text-gray-900">{dashboardStats.students.graduated}</p>
                 <div className="flex items-center mt-2">
                   <div className="w-2 h-2 rounded-full mr-2 bg-purple-500"></div>
                   <span className="text-xs font-medium text-purple-600">Completed program</span>
@@ -688,8 +805,18 @@ export default function StudentsPage() {
                     <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
-                            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          <div className="flex-shrink-0 h-12 w-12 relative">
+                            <img 
+                              src={`/api/admin/students/${student.id}/photo?t=${Date.now()}`} 
+                              alt={`${student.firstName} ${student.lastName}`}
+                              className="h-12 w-12 rounded-full object-cover border-2 border-blue-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm hidden">
                               {student.firstName[0]}{student.lastName[0]}
                             </div>
                           </div>
@@ -713,9 +840,13 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {student.enrollments && student.enrollments.length > 0 ? student.enrollments[0].reviewType : 'No enrollment'}
+                          {student.course === 'Bachelor of Science in Criminology' ? 'Criminology Review' :
+                           student.course === 'Bachelor of Science in Nursing' ? 'Nursing Review' :
+                           student.course || 'No Program'}
                         </div>
-                        <div className="text-xs text-gray-500">{student.course}</div>
+                        <div className="text-xs text-gray-500">
+                          {enrollmentCounts[student.id] > 0 ? 'Enrolled' : 'Not enrolled'}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 max-w-xs truncate" title={student.schoolName || 'N/A'}>
@@ -917,17 +1048,20 @@ export default function StudentsPage() {
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  {(selectedStudent.photoUrl || selectedStudent.photo) ? (
-                    <img 
-                      src={selectedStudent.photoUrl || selectedStudent.photo} 
-                      alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
-                      className="h-16 w-16 rounded-full object-cover border-4 border-white shadow-lg"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white font-bold text-xl border-4 border-white">
-                      {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
-                    </div>
-                  )}
+                  <img 
+                    src={`/api/admin/students/${selectedStudent.id}/photo?t=${Date.now()}`} 
+                    alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
+                    className="h-16 w-16 rounded-full object-cover border-4 border-white shadow-lg"
+                    onError={(e) => {
+                      console.log('Photo failed to load for student:', selectedStudent.id);
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                  <div className="h-16 w-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white font-bold text-xl border-4 border-white hidden">
+                    {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
+                  </div>
                   <div>
                     <h2 className="text-2xl font-bold text-white">
                       {selectedStudent.firstName} {selectedStudent.middleInitial} {selectedStudent.lastName}
@@ -960,18 +1094,21 @@ export default function StudentsPage() {
                 <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
                   {/* Student Photo */}
                   <div className="text-center">
-                    {(selectedStudent.photoUrl || selectedStudent.photo) ? (
-                      <img 
-                        src={selectedStudent.photoUrl || selectedStudent.photo} 
-                        alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
-                        className="h-48 w-48 rounded-2xl object-cover border-4 border-blue-200 shadow-lg"
-                        style={{ width: '192px', height: '192px' }}
-                      />
-                    ) : (
-                      <div className="h-48 w-48 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl border-4 border-blue-200 shadow-lg" style={{ width: '192px', height: '192px' }}>
-                        {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
-                      </div>
-                    )}
+                    <img 
+                      src={`/api/admin/students/${selectedStudent.id}/photo?t=${Date.now()}`} 
+                      alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
+                      className="h-48 w-48 rounded-2xl object-cover border-4 border-blue-200 shadow-lg"
+                      style={{ width: '192px', height: '192px' }}
+                      onError={(e) => {
+                        console.log('Large photo failed to load for student:', selectedStudent.id);
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                    <div className="h-48 w-48 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl border-4 border-blue-200 shadow-lg hidden" style={{ width: '192px', height: '192px' }}>
+                      {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
+                    </div>
                     <p className="mt-3 text-sm text-gray-600 font-medium">Student Photo (2x2 inches)</p>
                   </div>
 
@@ -997,17 +1134,19 @@ export default function StudentsPage() {
                       
                       {/* Student Photo in Badge */}
                       <div className="flex justify-center mt-1">
-                        {(selectedStudent.photoUrl || selectedStudent.photo) ? (
-                          <img 
-                            src={selectedStudent.photoUrl || selectedStudent.photo} 
-                            alt="Badge Photo"
-                            className="h-8 w-8 rounded-full object-cover border border-white"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">
-                            {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
-                          </div>
-                        )}
+                        <img 
+                          src={`/api/admin/students/${selectedStudent.id}/photo?t=${Date.now()}`} 
+                          alt="Badge Photo"
+                          className="h-8 w-8 rounded-full object-cover border border-white"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                        <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xs hidden">
+                          {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
+                        </div>
                       </div>
                       
                       {/* Student Info */}
@@ -1618,7 +1757,7 @@ export default function StudentsPage() {
                       >
                         <option value="">Select review program</option>
                         <option value="Nursing Review">Nursing Review</option>
-                        <option value="Criminologist Review">Criminology Review</option>
+                        <option value="Criminology Review">Criminology Review</option>
                       </select>
                     </div>
                     <div>
@@ -2029,6 +2168,116 @@ export default function StudentsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Export Students Data</h2>
+                  <p className="text-blue-100 text-sm mt-1">Choose export format and options</p>
+                </div>
+                <button 
+                  onClick={() => setShowExportModal(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">Export Summary</h3>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Total students: <span className="font-semibold text-blue-700">{filteredStudents.length}</span></p>
+                    <p>• Status filter: <span className="font-semibold">{statusFilter === 'all' ? 'All statuses' : statusFilter}</span></p>
+                    {searchTerm && <p>• Search term: <span className="font-semibold">"{searchTerm}"</span></p>}
+                    <p>• Export date: <span className="font-semibold">{new Date().toLocaleDateString()}</span></p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    disabled={isExporting}
+                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium text-gray-900">CSV File</div>
+                        <div className="text-sm text-gray-500">Student data only (~{Math.ceil(filteredStudents.length * 0.5)}KB)</div>
+                        <div className="text-xs text-gray-400 mt-1">Fast download • Excel compatible</div>
+                      </div>
+                    </div>
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => handleExport('zip')}
+                    disabled={isExporting}
+                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium text-gray-900">ZIP Package</div>
+                        <div className="text-sm text-gray-500">Complete package (~{Math.ceil(filteredStudents.length * 2)}MB estimated)</div>
+                        <div className="text-xs text-gray-400 mt-1">Includes photos & QR codes • May take longer</div>
+                      </div>
+                    </div>
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-start">
+                    <svg className="h-5 w-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-sm text-amber-700">
+                      <p className="font-medium">ZIP Package includes:</p>
+                      <ul className="mt-1 list-disc list-inside space-y-1">
+                        <li>Complete student data (CSV)</li>
+                        <li>Student photos (JPG format)</li>
+                        <li>QR codes for each student (PNG format)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end space-x-3">
+              <button 
+                onClick={() => setShowExportModal(false)}
+                disabled={isExporting}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

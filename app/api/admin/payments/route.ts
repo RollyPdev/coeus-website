@@ -204,7 +204,7 @@ export async function POST(request: Request) {
         data: {
           enrollmentId: enrollmentIdStr,
           studentId,
-          reviewType: 'Review for Criminology Licensure Examination',
+          reviewType: 'Criminology Review',
           batch: 'Default',
           startDate: new Date(),
           paymentMethod: paymentMethod || 'cash',

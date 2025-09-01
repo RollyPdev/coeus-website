@@ -16,6 +16,10 @@ model User {
   email     String   @unique
   password  String
   name      String
+  role      String   @default("Member") // Administrator, Staff, Member
+  status    String   @default("active") // active, inactive, suspended
+  lastLogin DateTime?
+  createdBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

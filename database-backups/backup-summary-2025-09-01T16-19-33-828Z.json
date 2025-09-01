@@ -1,0 +1,23 @@
+{
+  "backupFile": "/Users/rollyparedes/Documents/GitHub/coeus-website/database-backups/backup-2025-09-01T16-19-33-828Z.json",
+  "timestamp": "2025-09-01T16:19:33.838Z",
+  "recordCounts": {
+    "students": 23,
+    "enrollments": 27,
+    "payments": 1,
+    "users": 2,
+    "programs": 5,
+    "lecturers": 3,
+    "newsEvents": 2,
+    "goodMorals": 3,
+    "attendances": 1,
+    "examResults": 0,
+    "schedules": 0,
+    "scheduleAttendances": 0,
+    "paymentReminders": 0,
+    "paymentAuditLogs": 0,
+    "siteSettings": 1,
+    "aboutContent": 1,
+    "testimonials": 3
+  }
+}

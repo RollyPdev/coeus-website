@@ -55,7 +55,7 @@ export default function StudentsPage() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/students?limit=25');
+      const response = await fetch('/api/admin/students?limit=50');
       const data = await response.json();
       
       if (response.ok && data.students) {
@@ -91,12 +91,12 @@ export default function StudentsPage() {
       return studentPhotos[student.id];
     }
     
-    // Fallback to photoUrl if available
+    // Use photoUrl if available
     if (student.photoUrl && student.photoUrl.trim() !== '') {
       return student.photoUrl;
     }
     
-    return '/default-student.svg'; // Fallback image
+    return '/default-student.svg';
   };
 
   const filteredStudents = students.filter(student => {

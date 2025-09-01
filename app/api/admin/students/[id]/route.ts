@@ -7,50 +7,19 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-
     const student = await prisma.student.findUnique({
       where: { id },
-      select: {
-        id: true,
-        studentId: true,
-        firstName: true,
-        lastName: true,
-        middleInitial: true,
-        gender: true,
-        birthday: true,
-        age: true,
-        birthPlace: true,
-        contactNumber: true,
-        email: true,
-        address: true,
-        region: true,
-        province: true,
-        city: true,
-        barangay: true,
-        zipCode: true,
-        guardianFirstName: true,
-        guardianLastName: true,
-        guardianMiddleInitial: true,
-        guardianContact: true,
-        guardianAddress: true,
-        relationship: true,
-        schoolName: true,
-        course: true,
-        yearGraduated: true,
-        howDidYouHear: true,
-        referredBy: true,
-        photoUrl: true,
-        status: true,
-        createdAt: true,
+      include: {
         enrollments: {
           select: {
+            id: true,
             enrollmentId: true,
             reviewType: true,
+            batch: true,
             status: true,
+            paymentStatus: true,
+            startDate: true,
             createdAt: true
-          },
-          orderBy: {
-            createdAt: 'desc'
           }
         }
       }

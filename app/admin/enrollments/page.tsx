@@ -43,21 +43,50 @@ export default function EnrollmentsPage() {
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchEnrollments();
-  }, []);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchEnrollments();
+  }, [pagination.page]);
+
+  useEffect(() => {
+    // Debounce search to avoid too many API calls
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    const timeout = setTimeout(() => {
+      fetchEnrollments();
+    }, 300);
+    setSearchTimeout(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [searchTerm]);
 
   const fetchEnrollments = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/enrollments');
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter })
+      });
+      
+      const response = await fetch(`/api/admin/enrollments?${params}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Enrollment data:', data);
-        // Handle both old and new response formats
-        const enrollmentsData = data.enrollments || data;
-        setEnrollments(enrollmentsData);
+        setEnrollments(data.enrollments || []);
+        if (data.pagination) {
+          setPagination(data.pagination);
+        }
       }
     } catch (error) {
       console.error('Error fetching enrollments:', error);
@@ -66,14 +95,8 @@ export default function EnrollmentsPage() {
     }
   };
 
-  const filteredEnrollments = enrollments.filter(enrollment => {
-    const fullName = `${enrollment.student?.firstName || ''} ${enrollment.student?.lastName || ''}`;
-    const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (enrollment.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         enrollment.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || enrollment.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Remove client-side filtering since we're now doing server-side filtering
+  const filteredEnrollments = enrollments;
 
   const updateEnrollmentStatus = async (id: string, newStatus: Enrollment['status']) => {
     try {
@@ -152,7 +175,10 @@ export default function EnrollmentsPage() {
               </div>
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when filtering
+                }}
                 className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm shadow-sm text-sm min-w-[140px] transition-all"
               >
                 <option value="all">All Status</option>
@@ -230,9 +256,9 @@ export default function EnrollmentsPage() {
                 <p className="text-slate-600 mt-1">Manage and track student enrollment applications</p>
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Total: {filteredEnrollments.length}</span>
+                <span>Total: {pagination.total}</span>
                 <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
-                <span>Showing {filteredEnrollments.length} results</span>
+                <span>Showing {filteredEnrollments.length} of {pagination.total} results</span>
               </div>
             </div>
           </div>
@@ -367,6 +393,53 @@ export default function EnrollmentsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="px-8 py-6 border-t border-slate-200/50 bg-gradient-to-r from-slate-50 to-blue-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} results
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                    disabled={pagination.page === 1}
+                    className="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
+                          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            pagination.page === pageNum
+                              ? 'bg-blue-600 text-white'
+                              : 'text-slate-600 bg-white border border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+                    disabled={pagination.page === pagination.totalPages}
+                    className="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Enhanced Modal */}

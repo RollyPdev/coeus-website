@@ -3,11 +3,9 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    await prisma.$connect();
-    
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const limit = parseInt(searchParams.get('limit') || '100'); // Increased default limit
     const skip = (page - 1) * limit;
     
     const [students, total] = await Promise.all([
@@ -19,17 +17,14 @@ export async function GET(request: Request) {
           lastName: true,
           middleInitial: true,
           gender: true,
-          birthday: true,
-          age: true,
           contactNumber: true,
           email: true,
-          city: true,
-          province: true,
-          schoolName: true,
           course: true,
+          schoolName: true,
           yearGraduated: true,
           status: true,
           createdAt: true
+          // Excluding photo and photoUrl to reduce response size
         },
         orderBy: {
           lastName: 'asc'
@@ -40,8 +35,14 @@ export async function GET(request: Request) {
       prisma.student.count()
     ]);
 
+    const formattedStudents = students.map(student => ({
+      ...student,
+      hasPhoto: false, // Will be determined by photo status API
+      enrollmentCount: 0 // Will be fetched separately when needed
+    }));
+
     return NextResponse.json({ 
-      students,
+      students: formattedStudents,
       pagination: {
         page,
         limit,
@@ -51,17 +52,10 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error('Error fetching students:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
     return NextResponse.json(
-      { error: 'Failed to fetch students', details: error.message },
+      { error: 'Failed to fetch students' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

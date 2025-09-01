@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         yearGraduated: data.yearGraduated || null,
         howDidYouHear: data.howDidYouHear || null,
         referredBy: data.referredBy || null,
-        photoUrl: data.photo || null,
+        photo: data.photo || null,
         status: "pending" // Set to pending until admin approval
       }
     });
