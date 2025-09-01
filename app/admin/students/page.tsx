@@ -35,7 +35,7 @@ interface Student {
   photoUrl?: string;
   status: string;
   createdAt: string;
-  enrollments: {
+  enrollments?: {
     enrollmentId: string;
     reviewType: string;
     status: string;
@@ -116,7 +116,7 @@ export default function StudentsPage() {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/admin/students?limit=100');
+        const response = await fetch('/api/admin/students?limit=50');
         const data = await response.json();
         console.log('API Response:', data);
         if (data.students) {
@@ -713,7 +713,7 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {student.enrollments.length > 0 ? student.enrollments[0].reviewType : 'No enrollment'}
+                          {student.enrollments && student.enrollments.length > 0 ? student.enrollments[0].reviewType : 'No enrollment'}
                         </div>
                         <div className="text-xs text-gray-500">{student.course}</div>
                       </td>
@@ -1141,7 +1141,7 @@ export default function StudentsPage() {
               </div>
 
               {/* Enrollment Information */}
-              {selectedStudent.enrollments.length > 0 && (
+              {selectedStudent.enrollments && selectedStudent.enrollments.length > 0 && (
                 <div className="mt-6 bg-blue-50 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

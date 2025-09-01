@@ -29,23 +29,46 @@ export default function StudentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [studentPhotos, setStudentPhotos] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
+  const fetchStudentPhoto = async (studentId: string) => {
+    try {
+      const response = await fetch(`/api/students/${studentId}/photo`);
+      if (response.ok) {
+        const data = await response.json();
+        const photoUrl = data.photoUrl || (data.photo ? 
+          data.photo.startsWith('data:image/') ? data.photo : `data:image/jpeg;base64,${data.photo}` 
+          : null);
+        if (photoUrl) {
+          setStudentPhotos(prev => ({ ...prev, [studentId]: photoUrl }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching student photo:', error);
+    }
+  };
+
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/students');
+      const response = await fetch('/api/admin/students?limit=25');
       const data = await response.json();
       
-      if (response.ok) {
+      if (response.ok && data.students) {
         // Filter only active students for public display
         const activeStudents = data.students.filter((student: Student) => 
           student.status === 'active' || student.status === 'graduated'
         );
         setStudents(activeStudents);
+        
+        // Fetch photos for each student
+        activeStudents.forEach((student: Student) => {
+          fetchStudentPhoto(student.id);
+        });
       } else {
         throw new Error(data.error || 'Failed to fetch students');
       }
@@ -63,20 +86,14 @@ export default function StudentsPage() {
   };
 
   const getStudentImage = (student: Student) => {
-    if (student.photoUrl && student.photoUrl.trim() !== '') {
-      return student.photoUrl;
+    // Check cached photos first
+    if (studentPhotos[student.id]) {
+      return studentPhotos[student.id];
     }
     
-    if (student.photo && student.photo.trim() !== '') {
-      // Handle base64 encoded images
-      if (student.photo.startsWith('data:image/')) {
-        return student.photo;
-      }
-      // Handle images that might be missing the data URL prefix
-      if (!student.photo.startsWith('http') && !student.photo.startsWith('/')) {
-        return `data:image/jpeg;base64,${student.photo}`;
-      }
-      return student.photo;
+    // Fallback to photoUrl if available
+    if (student.photoUrl && student.photoUrl.trim() !== '') {
+      return student.photoUrl;
     }
     
     return '/default-student.svg'; // Fallback image

@@ -23,25 +23,13 @@ export async function GET(request: Request) {
           age: true,
           contactNumber: true,
           email: true,
-          region: true,
-          province: true,
           city: true,
+          province: true,
           schoolName: true,
           course: true,
           yearGraduated: true,
           status: true,
-          createdAt: true,
-          enrollments: {
-            select: {
-              enrollmentId: true,
-              reviewType: true,
-              status: true,
-              createdAt: true
-            },
-            orderBy: {
-              createdAt: 'desc'
-            }
-          }
+          createdAt: true
         },
         orderBy: {
           lastName: 'asc'
