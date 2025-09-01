@@ -13,13 +13,17 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
   const [formData, setFormData] = useState({
     studentId: '',
     enrollmentId: '',
+    promoAvails: '',
     amount: '',
     paymentMethod: 'cash',
     paymentGateway: '',
     dueDate: '',
     notes: '',
-    installmentPlan: 'full'
+    installmentPlan: 'full',
+    paymentStatus: 'downpayment'
   });
+
+  const [loading, setLoading] = useState(false);
 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [availableEnrollments, setAvailableEnrollments] = useState<any[]>([]);
@@ -76,7 +80,7 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
     return programMap[reviewType] || reviewType;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
@@ -85,8 +89,14 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
       return;
     }
     
-    console.log('Form data being submitted:', formData);
-    onSubmit(formData);
+    setLoading(true);
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Error submitting payment:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const calculateFinalAmount = () => {
@@ -178,23 +188,40 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
             </div>
           </div>
 
-          {/* Payment Details */}
+          {/* Promo Avails and Payment Amount */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Amount (₱)
+                Total Enrollment Value (₱)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.promoAvails}
+                onChange={(e) => setFormData(prev => ({ ...prev, promoAvails: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Total value student needs to pay"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Amount (₱)
               </label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Amount student paid"
                 required
               />
             </div>
+          </div>
 
+          {/* Payment Method and Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Method
@@ -202,7 +229,6 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
               <select
                 value={formData.paymentMethod}
                 onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value }))}
-
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="cash">Cash</option>
@@ -210,6 +236,21 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
                 <option value="bank_transfer">Bank Transfer</option>
                 <option value="credit_card">Credit Card</option>
                 <option value="paypal">PayPal</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Status
+              </label>
+              <select
+                value={formData.paymentStatus}
+                onChange={(e) => setFormData(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="downpayment">Downpayment</option>
+                <option value="registration_fee">Registration Fee</option>
+                <option value="fully_paid">Fully Paid</option>
               </select>
             </div>
           </div>
@@ -278,14 +319,31 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
             />
           </div>
 
-          {/* Amount Summary */}
-          {formData.amount && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium text-gray-900 mb-2">Payment Summary</h3>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Amount:</span>
-                  <span>₱{calculateFinalAmount().toLocaleString()}</span>
+          {/* Payment Summary */}
+          {(formData.amount || formData.promoAvails) && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="font-medium text-gray-900 mb-3">Payment Summary</h3>
+              <div className="space-y-2 text-sm">
+                {formData.promoAvails && (
+                  <div className="flex justify-between">
+                    <span className="text-green-600">Total Enrollment Value:</span>
+                    <span className="font-medium text-green-700">₱{parseFloat(formData.promoAvails || '0').toLocaleString()}</span>
+                  </div>
+                )}
+                {formData.amount && (
+                  <div className="flex justify-between">
+                    <span className="text-blue-600">Payment Amount:</span>
+                    <span className="font-medium text-blue-700">₱{parseFloat(formData.amount || '0').toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="border-t border-gray-300 pt-2">
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Remaining Balance:</span>
+                    <span className="text-orange-700">₱{Math.max(0, parseFloat(formData.promoAvails || '0') - parseFloat(formData.amount || '0')).toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 mt-2">
+                  Status: <span className="font-medium capitalize">{formData.paymentStatus.replace('_', ' ')}</span>
                 </div>
               </div>
             </div>
@@ -297,14 +355,26 @@ export default function PaymentForm({ onSubmit, onClose, students, enrollments }
               type="button"
               onClick={onClose}
               className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              disabled={loading}
             >
-              Create Payment
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                'Create Payment'
+              )}
             </button>
           </div>
         </form>

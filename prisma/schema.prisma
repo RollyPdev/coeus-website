@@ -213,6 +213,8 @@ model Payment {
   enrollment          Enrollment @relation(fields: [enrollmentId], references: [id])
   enrollmentId        String
   amount              Float
+  promoAvails         Float?   @default(0) // promotional amount student availed
+  paymentStatus       String?  @default("downpayment") // downpayment, registration_fee, fully_paid
   paymentMethod       String   // cash, gcash, bank transfer, paypal
   paymentGateway      String?  // gcash, paymaya, bank
   gatewayTransactionId String?

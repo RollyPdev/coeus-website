@@ -38,14 +38,30 @@ export default function ReceiptPage() {
 
   const fetchReceipt = async () => {
     try {
-      const response = await fetch(`/api/admin/payments?search=${paymentId}&limit=1`);
-      const data = await response.json();
+      // Try multiple search approaches
+      let response = await fetch(`/api/admin/payments?search=${paymentId}&limit=1`);
+      let data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch receipt');
       }
       
-      const payment = data.payments?.[0];
+      let payment = data.payments?.[0];
+      
+      // If not found by search, try to get all payments and find by ID
+      if (!payment) {
+        response = await fetch('/api/admin/payments?limit=100');
+        data = await response.json();
+        
+        if (response.ok && data.payments) {
+          payment = data.payments.find(p => 
+            p.id === paymentId || 
+            p.transactionId === paymentId || 
+            p.receiptNumber === paymentId
+          );
+        }
+      }
+      
       if (!payment) {
         throw new Error('Payment not found');
       }

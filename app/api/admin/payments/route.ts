@@ -63,29 +63,47 @@ export async function GET(request: NextRequest) {
     // Get analytics data
     const analytics = await getPaymentAnalytics();
 
-    const formattedPayments = payments.map(payment => ({
-      id: payment.id,
-      transactionId: payment.transactionId,
-      studentName: `${payment.enrollment.student.firstName} ${payment.enrollment.student.lastName}`,
-      studentId: payment.enrollment.student.studentId,
-      studentEmail: payment.enrollment.student.email,
-      studentContact: payment.enrollment.student.contactNumber,
-      amount: payment.amount,
-      paymentMethod: payment.paymentMethod,
-      paymentDate: payment.paymentDate.toISOString(),
-      status: payment.status,
-      receiptNumber: payment.receiptNumber,
-      notes: payment.notes,
-      enrollmentId: payment.enrollmentId,
-      enrollment: {
-        id: payment.enrollment.id,
-        reviewType: payment.enrollment.reviewType,
-        batch: payment.enrollment.batch,
-        startDate: payment.enrollment.startDate?.toISOString(),
-        student: payment.enrollment.student
-      },
-      createdAt: payment.createdAt.toISOString(),
-      updatedAt: payment.updatedAt.toISOString()
+    const formattedPayments = await Promise.all(payments.map(async payment => {
+      // Get all payments for this enrollment to calculate balances
+      const allPayments = await prisma.payment.findMany({
+        where: { enrollmentId: payment.enrollmentId },
+        select: { amount: true, status: true }
+      });
+      
+      const totalPaid = allPayments
+        .filter(p => p.status === 'completed')
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      const remainingBalance = Math.max(0, payment.enrollment.amount - totalPaid);
+      
+      return {
+        id: payment.id,
+        transactionId: payment.transactionId,
+        studentName: `${payment.enrollment.student.firstName} ${payment.enrollment.student.lastName}`,
+        studentId: payment.enrollment.student.studentId,
+        studentEmail: payment.enrollment.student.email,
+        studentContact: payment.enrollment.student.contactNumber,
+        amount: payment.amount,
+        paymentMethod: payment.paymentMethod,
+        paymentDate: payment.paymentDate.toISOString(),
+        status: payment.status,
+        receiptNumber: payment.receiptNumber,
+        notes: payment.notes,
+        enrollmentId: payment.enrollmentId,
+        enrollment: {
+          id: payment.enrollment.id,
+          reviewType: payment.enrollment.reviewType,
+          batch: payment.enrollment.batch,
+          startDate: payment.enrollment.startDate?.toISOString(),
+          amount: payment.enrollment.amount,
+          totalPaid: totalPaid,
+          remainingBalance: remainingBalance,
+          paymentStatus: payment.enrollment.paymentStatus,
+          student: payment.enrollment.student
+        },
+        createdAt: payment.createdAt.toISOString(),
+        updatedAt: payment.updatedAt.toISOString()
+      };
     }));
 
     return NextResponse.json({ 
@@ -155,6 +173,7 @@ export async function POST(request: Request) {
     const { 
       studentId, 
       enrollmentId, 
+      promoAvails = 0,
       amount, 
       paymentMethod, 
       paymentGateway,
@@ -162,11 +181,14 @@ export async function POST(request: Request) {
       discount = 0,
       tax = 0,
       notes,
-      installmentPlan
+      installmentPlan,
+      paymentStatus = 'downpayment'
     } = await request.json();
 
     // Convert amount to number and validate required fields
     const numericAmount = parseFloat(amount);
+    const numericPromoAvails = parseFloat(promoAvails) || 0;
+    
     if (!studentId || !amount || isNaN(numericAmount) || numericAmount <= 0) {
       return NextResponse.json(
         { error: 'Missing required fields or invalid amount' },
@@ -231,6 +253,8 @@ export async function POST(request: Request) {
           transactionId,
           enrollmentId: finalEnrollmentId,
           amount: finalAmount,
+          promoAvails: numericPromoAvails,
+          paymentStatus: paymentStatus,
           paymentMethod: paymentMethod || 'cash',
           paymentDate: new Date(),
           status: 'completed',
@@ -239,11 +263,32 @@ export async function POST(request: Request) {
         }
       });
 
-      // Update enrollment payment status
+      // Update enrollment with promo avails as total value and payment as amount paid
+      const enrollment = await tx.enrollment.findUnique({ where: { id: finalEnrollmentId } });
+      const currentPromoAvails = numericPromoAvails > 0 ? numericPromoAvails : enrollment?.amount || finalAmount;
+      
+      // Get existing payments to calculate new totals
+      const existingPayments = await tx.payment.findMany({
+        where: { enrollmentId: finalEnrollmentId, status: 'completed' }
+      });
+      const existingTotal = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+      const newTotalPaid = existingTotal + finalAmount;
+      const newRemainingBalance = Math.max(0, currentPromoAvails - newTotalPaid);
+      
+      let enrollmentPaymentStatus = 'pending';
+      if (newRemainingBalance === 0 || paymentStatus === 'fully_paid') {
+        enrollmentPaymentStatus = 'paid';
+      } else if (newTotalPaid > 0) {
+        enrollmentPaymentStatus = 'partial';
+      }
+      
       await tx.enrollment.update({
         where: { id: finalEnrollmentId },
         data: {
-          paymentStatus: 'paid'
+          amount: currentPromoAvails,
+          totalPaid: newTotalPaid,
+          remainingBalance: newRemainingBalance,
+          paymentStatus: enrollmentPaymentStatus
         }
       });
 

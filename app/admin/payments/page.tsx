@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import PaymentForm from '@/components/admin/PaymentForm';
 import PaymentAnalytics from '@/components/admin/PaymentAnalytics';
 import PaymentFilters from '@/components/admin/PaymentFilters';
+import PaymentUpdateModal from '@/components/admin/PaymentUpdateModal';
+import PaymentBalanceCard from '@/components/admin/PaymentBalanceCard';
+import PaymentSummaryCards from '@/components/admin/PaymentSummaryCards';
 
 interface Payment {
   id: string;
@@ -30,6 +33,10 @@ interface Payment {
     reviewType: string;
     batch?: string;
     startDate?: string;
+    amount: number;
+    totalPaid: number;
+    remainingBalance: number;
+    paymentStatus: string;
     student: {
       firstName: string;
       lastName: string;
@@ -51,12 +58,16 @@ export default function PaymentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [filters, setFilters] = useState<any>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('payments');
+  const [studentBalances, setStudentBalances] = useState<any[]>([]);
+  const [balanceSummary, setBalanceSummary] = useState<any>(null);
 
   useEffect(() => {
     const isSearch = filters.search && filters.search.length > 0;
@@ -64,6 +75,7 @@ export default function PaymentsPage() {
     if (!isSearch) {
       fetchStudents();
       fetchEnrollments();
+      fetchStudentBalances();
     }
   }, [filters, currentPage]);
 
@@ -126,6 +138,67 @@ export default function PaymentsPage() {
     }
   };
 
+  const fetchStudentBalances = async () => {
+    try {
+      const response = await fetch('/api/admin/payments/balances');
+      const data = await response.json();
+      if (response.ok) {
+        setStudentBalances(data.balances || []);
+        setBalanceSummary(data.summary || null);
+      }
+    } catch (error) {
+      console.error('Error fetching student balances:', error);
+    }
+  };
+
+  const handleUpdatePayment = async (paymentId: string, updateData: any) => {
+    try {
+      const response = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update payment');
+      }
+      
+      setShowUpdateModal(false);
+      setSelectedPayment(null);
+      fetchPayments();
+      fetchStudentBalances();
+      alert('Payment updated successfully!');
+    } catch (error) {
+      console.error('Error updating payment:', error);
+      alert(error instanceof Error ? error.message : 'Failed to update payment');
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    try {
+      const response = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete payment');
+      }
+      
+      setShowDeleteModal(false);
+      setSelectedPayment(null);
+      fetchPayments();
+      fetchStudentBalances();
+      alert('Payment deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      alert(error instanceof Error ? error.message : 'Failed to delete payment');
+    }
+  };
+
 
 
   const handleCreatePayment = async (paymentData: any) => {
@@ -134,7 +207,11 @@ export default function PaymentsPage() {
       const response = await fetch('/api/admin/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify({
+          ...paymentData,
+          promoAvails: paymentData.promoAvails || 0,
+          paymentStatus: paymentData.paymentStatus || 'downpayment'
+        })
       });
       
       const data = await response.json();
@@ -146,10 +223,12 @@ export default function PaymentsPage() {
       
       setShowPaymentForm(false);
       fetchPayments();
+      fetchStudentBalances();
       alert('Payment created successfully!');
     } catch (error) {
       console.error('Error creating payment:', error);
       alert(error instanceof Error ? error.message : 'Failed to create payment');
+      throw error;
     }
   };
 
@@ -266,6 +345,16 @@ export default function PaymentsPage() {
               >
                 Analytics
               </button>
+              <button
+                onClick={() => setActiveTab('balances')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'balances'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Student Balances
+              </button>
             </nav>
           </div>
         </div>
@@ -273,6 +362,46 @@ export default function PaymentsPage() {
         {/* Content */}
         {activeTab === 'analytics' ? (
           <PaymentAnalytics analytics={analytics} />
+        ) : activeTab === 'balances' ? (
+          <>
+            {balanceSummary && (
+              <PaymentSummaryCards
+                totalStudents={balanceSummary.totalStudents}
+                totalEnrollmentAmount={balanceSummary.totalEnrollmentAmount}
+                totalPaidAmount={balanceSummary.totalPaidAmount}
+                totalRemainingBalance={balanceSummary.totalRemainingBalance}
+                paidInFull={balanceSummary.paidInFull}
+                partialPayments={balanceSummary.partialPayments}
+                pendingPayments={balanceSummary.pendingPayments}
+              />
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {studentBalances.map((balance) => (
+              <PaymentBalanceCard
+                key={balance.studentId}
+                studentName={balance.studentName}
+                studentId={balance.studentId}
+                totalEnrollment={balance.totalEnrollment}
+                totalPaid={balance.totalPaid}
+                remainingBalance={balance.remainingBalance}
+                amountAvailable={balance.amountAvailable}
+                currentBalance={balance.currentBalance}
+                paymentStatus={balance.paymentStatus}
+              />
+            ))}
+            {studentBalances.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <div className="text-gray-500">
+                  <svg className="h-12 w-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <p className="text-lg font-medium mb-2">No student balances found</p>
+                  <p className="text-sm text-gray-400">Student payment balances will appear here</p>
+                </div>
+              </div>
+            )}
+            </div>
+          </>
         ) : (
           <>
             {/* Filters */}
@@ -418,12 +547,29 @@ export default function PaymentsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-6">
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1">
                             <button
                               onClick={() => window.open(`/receipt?paymentId=${payment.id}`, '_blank')}
-                              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                              title="View Receipt"
                             >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
                               Receipt
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedPayment(payment);
+                                setShowUpdateModal(true);
+                              }}
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                              title="Update Payment"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Update
                             </button>
                             {payment.status === 'completed' && (
                               <button
@@ -431,11 +577,28 @@ export default function PaymentsPage() {
                                   setSelectedPayment(payment);
                                   setShowRefundModal(true);
                                 }}
-                                className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                                title="Process Refund"
                               >
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                </svg>
                                 Refund
                               </button>
                             )}
+                            <button
+                              onClick={() => {
+                                setSelectedPayment(payment);
+                                setShowDeleteModal(true);
+                              }}
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                              title="Delete Payment"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -486,6 +649,30 @@ export default function PaymentsPage() {
         />
       )}
 
+      {/* Update Modal */}
+      {showUpdateModal && selectedPayment && (
+        <PaymentUpdateModal
+          payment={selectedPayment}
+          onUpdate={handleUpdatePayment}
+          onClose={() => {
+            setShowUpdateModal(false);
+            setSelectedPayment(null);
+          }}
+        />
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && selectedPayment && (
+        <DeleteModal
+          payment={selectedPayment}
+          onDelete={handleDeletePayment}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedPayment(null);
+          }}
+        />
+      )}
+
       {/* Refund Modal */}
       {showRefundModal && selectedPayment && (
         <RefundModal
@@ -497,6 +684,76 @@ export default function PaymentsPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+// Delete Modal Component
+function DeleteModal({ payment, onDelete, onClose }: { payment: Payment; onDelete: (id: string) => void; onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      await onDelete(payment.id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-red-900">Delete Payment</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="flex items-center mb-4">
+            <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg font-medium text-gray-900">Are you sure?</h3>
+              <p className="text-sm text-gray-500">This action cannot be undone.</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <p className="text-sm text-gray-700">
+              <strong>Transaction:</strong> {payment.transactionId}<br/>
+              <strong>Student:</strong> {payment.studentName}<br/>
+              <strong>Amount:</strong> ₱{payment.amount.toLocaleString()}
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? 'Deleting...' : 'Delete Payment'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
