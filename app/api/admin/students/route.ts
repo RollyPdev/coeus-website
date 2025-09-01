@@ -4,15 +4,49 @@ import prisma from '@/lib/prisma';
 export async function GET() {
   try {
     const students = await prisma.student.findMany({
-      where: {
-        status: 'active'
-      },
       select: {
         id: true,
         studentId: true,
         firstName: true,
         lastName: true,
-        photoUrl: true
+        middleInitial: true,
+        gender: true,
+        birthday: true,
+        age: true,
+        birthPlace: true,
+        contactNumber: true,
+        email: true,
+        address: true,
+        region: true,
+        province: true,
+        city: true,
+        barangay: true,
+        zipCode: true,
+        guardianFirstName: true,
+        guardianLastName: true,
+        guardianMiddleInitial: true,
+        guardianContact: true,
+        guardianAddress: true,
+        relationship: true,
+        schoolName: true,
+        course: true,
+        yearGraduated: true,
+        howDidYouHear: true,
+        referredBy: true,
+
+        status: true,
+        createdAt: true,
+        enrollments: {
+          select: {
+            enrollmentId: true,
+            reviewType: true,
+            status: true,
+            createdAt: true
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
       },
       orderBy: {
         lastName: 'asc'

@@ -21,18 +21,13 @@ export async function GET(request: Request) {
         firstName: true,
         lastName: true,
         middleInitial: true,
-        photo: true,
-        photoUrl: true,
         status: true,
         enrollments: {
           select: {
             status: true,
             reviewType: true
           },
-          take: 1,
-          orderBy: {
-            createdAt: 'desc'
-          }
+          take: 1
         }
       },
       take: 10

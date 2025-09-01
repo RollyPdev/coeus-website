@@ -134,15 +134,6 @@ export default function StudentStatusPage() {
             </div>
           )}
 
-          {/* Debug Info */}
-          {searchName.trim().length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-600">
-                Debug: Searched for "{searchName}" - Found {students.length} students
-              </p>
-            </div>
-          )}
-
           {searchName.trim().length > 0 && students.length === 0 && !loading && (
             <div className="text-center py-8">
               <p className="text-gray-500">No students found with that name.</p>

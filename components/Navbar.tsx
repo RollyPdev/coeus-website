@@ -78,6 +78,7 @@ const Navbar = () => {
                 <a href="#lecturers" className="block px-4 py-2 hover:bg-blue-50 rounded-b-lg">Review Lecturers</a>
               </div>
             </div>
+            <Link href="/students" className="hover:text-blue-700 font-medium transition-colors">Students</Link>
             <Link href="/about" className="hover:text-blue-700 font-medium transition-colors">About Us</Link>
             <Link href="/attendance" className="hover:text-green-700 font-medium transition-colors flex items-center">
               <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,6 +141,7 @@ const Navbar = () => {
             </div>
           </div>
           
+          <Link href="/students" onClick={closeMobileMenu} className="block py-2 hover:text-blue-700">Students</Link>
           <Link href="/about" onClick={closeMobileMenu} className="block py-2 hover:text-blue-700">About Us</Link>
           <Link href="/attendance" onClick={closeMobileMenu} className="block py-2 hover:text-green-700 flex items-center">
             <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

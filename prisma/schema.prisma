@@ -91,6 +91,9 @@ model SiteSettings {
   contactPhone  String
   address       String
   socialLinks   String
+  paymentGateways String? // JSON config for payment gateways
+  taxRate       Float?   @default(0)
+  lateFeeRate   Float?   @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -149,9 +152,27 @@ model Enrollment {
   endDate             DateTime?
   paymentMethod       String
   amount              Float
-  paymentStatus       String   @default("pending") // pending, partial, paid
+  totalPaid           Float    @default(0)
+  remainingBalance    Float    @default(0)
+  paymentStatus       String   @default("pending") // pending, partial, paid, overdue
   status              String   @default("pending") // pending, verified, completed
+  installmentPlan     String?  // full, monthly, quarterly
+  nextPaymentDue      DateTime?
   payments            Payment[]
+  paymentReminders    PaymentReminder[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model PaymentReminder {
+  id                  String   @id @default(cuid())
+  enrollment          Enrollment @relation(fields: [enrollmentId], references: [id])
+  enrollmentId        String
+  reminderType        String   // email, sms, both
+  message             String
+  scheduledDate       DateTime
+  sentDate            DateTime?
+  status              String   @default("pending") // pending, sent, failed
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
@@ -189,12 +210,35 @@ model Payment {
   enrollmentId        String
   amount              Float
   paymentMethod       String   // cash, gcash, bank transfer, paypal
+  paymentGateway      String?  // gcash, paymaya, bank
+  gatewayTransactionId String?
+  gatewayResponse     String?  // JSON response from gateway
   paymentDate         DateTime
+  dueDate             DateTime?
   receiptNumber       String?
-  status              String   // completed, pending, failed
+  status              String   // completed, pending, failed, refunded
+  refundAmount        Float?   @default(0)
+  refundReason        String?
+  lateFee             Float?   @default(0)
+  discount            Float?   @default(0)
+  tax                 Float?   @default(0)
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  auditLogs           PaymentAuditLog[]
+}
+
+model PaymentAuditLog {
+  id                  String   @id @default(cuid())
+  payment             Payment  @relation(fields: [paymentId], references: [id])
+  paymentId           String
+  action              String   // created, updated, refunded, cancelled
+  oldValues           String?  // JSON of old values
+  newValues           String?  // JSON of new values
+  performedBy         String
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime @default(now())
 }
 
 model GoodMoral {

@@ -957,15 +957,15 @@ export default function StudentsPage() {
                       <img 
                         src={selectedStudent.photoUrl || selectedStudent.photo} 
                         alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
-                        className="h-72 w-72 rounded-2xl object-cover border-4 border-blue-200 shadow-lg"
-                        style={{ width: '288px', height: '288px' }}
+                        className="h-48 w-48 rounded-2xl object-cover border-4 border-blue-200 shadow-lg"
+                        style={{ width: '192px', height: '192px' }}
                       />
                     ) : (
-                      <div className="h-72 w-72 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-5xl border-4 border-blue-200 shadow-lg" style={{ width: '288px', height: '288px' }}>
+                      <div className="h-48 w-48 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl border-4 border-blue-200 shadow-lg" style={{ width: '192px', height: '192px' }}>
                         {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
                       </div>
                     )}
-                    <p className="mt-3 text-sm text-gray-600 font-medium">Student Photo (3x3 inches)</p>
+                    <p className="mt-3 text-sm text-gray-600 font-medium">Student Photo (2x2 inches)</p>
                   </div>
 
                   {/* QR Code */}
@@ -1549,7 +1549,7 @@ export default function StudentsPage() {
                     Student Photo
                   </h3>
                   <div className="flex flex-col items-center space-y-4">
-                    <div className="w-32 h-32 rounded-2xl overflow-hidden bg-white border-4 border-blue-200 shadow-lg">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white border-4 border-blue-200 shadow-lg">
                       {addFormData.photo ? (
                         <img 
                           src={addFormData.photo} 
@@ -1558,7 +1558,7 @@ export default function StudentsPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
@@ -1580,7 +1580,7 @@ export default function StudentsPage() {
                         Take Photo
                       </button>
                     </div>
-                    <p className="text-xs text-gray-600 bg-white/70 px-3 py-1 rounded-full">2x2 ID picture format</p>
+                    <p className="text-xs text-gray-600 bg-white/70 px-3 py-1 rounded-full">2x2 ID picture format (recommended)</p>
                     <input
                       ref={(ref) => setFileInputRef(ref)}
                       type="file"
