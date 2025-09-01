@@ -1,65 +1,79 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const students = await prisma.student.findMany({
-      select: {
-        id: true,
-        studentId: true,
-        firstName: true,
-        lastName: true,
-        middleInitial: true,
-        gender: true,
-        birthday: true,
-        age: true,
-        birthPlace: true,
-        contactNumber: true,
-        email: true,
-        address: true,
-        region: true,
-        province: true,
-        city: true,
-        barangay: true,
-        zipCode: true,
-        guardianFirstName: true,
-        guardianLastName: true,
-        guardianMiddleInitial: true,
-        guardianContact: true,
-        guardianAddress: true,
-        relationship: true,
-        schoolName: true,
-        course: true,
-        yearGraduated: true,
-        howDidYouHear: true,
-        referredBy: true,
-
-        status: true,
-        createdAt: true,
-        enrollments: {
-          select: {
-            enrollmentId: true,
-            reviewType: true,
-            status: true,
-            createdAt: true
-          },
-          orderBy: {
-            createdAt: 'desc'
+    await prisma.$connect();
+    
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const skip = (page - 1) * limit;
+    
+    const [students, total] = await Promise.all([
+      prisma.student.findMany({
+        select: {
+          id: true,
+          studentId: true,
+          firstName: true,
+          lastName: true,
+          middleInitial: true,
+          gender: true,
+          birthday: true,
+          age: true,
+          contactNumber: true,
+          email: true,
+          region: true,
+          province: true,
+          city: true,
+          schoolName: true,
+          course: true,
+          yearGraduated: true,
+          status: true,
+          createdAt: true,
+          enrollments: {
+            select: {
+              enrollmentId: true,
+              reviewType: true,
+              status: true,
+              createdAt: true
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
           }
-        }
-      },
-      orderBy: {
-        lastName: 'asc'
+        },
+        orderBy: {
+          lastName: 'asc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.student.count()
+    ]);
+
+    return NextResponse.json({ 
+      students,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
-
-    return NextResponse.json({ students });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching students:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch students' },
+      { error: 'Failed to fetch students', details: error.message },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

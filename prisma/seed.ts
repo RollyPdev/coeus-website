@@ -214,6 +214,110 @@ async function main() {
   ]);
   
   console.log({ testimonials });
+  
+  // Create sample students with photos
+  const students = await Promise.all([
+    prisma.student.upsert({
+      where: { studentId: 'STU-2024-001' },
+      update: {},
+      create: {
+        studentId: 'STU-2024-001',
+        firstName: 'Maria',
+        lastName: 'Santos',
+        middleInitial: 'P',
+        gender: 'Female',
+        birthday: new Date('1998-05-15'),
+        age: 25,
+        birthPlace: 'Manila, Philippines',
+        contactNumber: '+639123456789',
+        email: 'maria.santos@email.com',
+        address: '123 Rizal Street, Manila',
+        region: 'National Capital Region',
+        province: 'Metro Manila',
+        city: 'Manila',
+        barangay: 'Ermita',
+        zipCode: '1000',
+        guardianFirstName: 'Jose',
+        guardianLastName: 'Santos',
+        guardianContact: '+639987654321',
+        guardianAddress: '123 Rizal Street, Manila',
+        relationship: 'Father',
+        schoolName: 'University of the Philippines',
+        course: 'Bachelor of Science in Criminology',
+        yearGraduated: '2020',
+        howDidYouHear: 'Social Media',
+        photoUrl: '/learning-1.jpg',
+        status: 'active'
+      }
+    }),
+    prisma.student.upsert({
+      where: { studentId: 'STU-2024-002' },
+      update: {},
+      create: {
+        studentId: 'STU-2024-002',
+        firstName: 'Juan',
+        lastName: 'Dela Cruz',
+        gender: 'Male',
+        birthday: new Date('1999-03-22'),
+        age: 24,
+        birthPlace: 'Quezon City, Philippines',
+        contactNumber: '+639234567890',
+        email: 'juan.delacruz@email.com',
+        address: '456 EDSA, Quezon City',
+        region: 'National Capital Region',
+        province: 'Metro Manila',
+        city: 'Quezon City',
+        barangay: 'Diliman',
+        zipCode: '1100',
+        guardianFirstName: 'Rosa',
+        guardianLastName: 'Dela Cruz',
+        guardianContact: '+639876543210',
+        guardianAddress: '456 EDSA, Quezon City',
+        relationship: 'Mother',
+        schoolName: 'Ateneo de Manila University',
+        course: 'Bachelor of Science in Nursing',
+        yearGraduated: '2021',
+        howDidYouHear: 'Referral',
+        photoUrl: '/image-1.jpg',
+        status: 'graduated'
+      }
+    }),
+    prisma.student.upsert({
+      where: { studentId: 'STU-2024-003' },
+      update: {},
+      create: {
+        studentId: 'STU-2024-003',
+        firstName: 'Ana',
+        lastName: 'Reyes',
+        middleInitial: 'M',
+        gender: 'Female',
+        birthday: new Date('1997-11-08'),
+        age: 26,
+        birthPlace: 'Cebu City, Philippines',
+        contactNumber: '+639345678901',
+        email: 'ana.reyes@email.com',
+        address: '789 Colon Street, Cebu City',
+        region: 'Central Visayas',
+        province: 'Cebu',
+        city: 'Cebu City',
+        barangay: 'Lahug',
+        zipCode: '6000',
+        guardianFirstName: 'Pedro',
+        guardianLastName: 'Reyes',
+        guardianContact: '+639765432109',
+        guardianAddress: '789 Colon Street, Cebu City',
+        relationship: 'Father',
+        schoolName: 'University of San Carlos',
+        course: 'Bachelor of Science in Criminology',
+        yearGraduated: '2019',
+        howDidYouHear: 'Website',
+        photoUrl: '/image-2.jpg',
+        status: 'active'
+      }
+    })
+  ]);
+  
+  console.log({ students });
 }
 
 main()

@@ -116,10 +116,17 @@ export default function StudentsPage() {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/admin/students');
+        const response = await fetch('/api/admin/students?limit=100');
         const data = await response.json();
         console.log('API Response:', data);
-        setStudents(data.students || []);
+        if (data.students) {
+          setStudents(data.students);
+        } else if (data.error) {
+          console.error('API Error:', data.error);
+          setStudents([]);
+        } else {
+          setStudents([]);
+        }
       } catch (error) {
         console.error('Failed to fetch students:', error);
         setStudents([]);

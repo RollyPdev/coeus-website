@@ -63,9 +63,23 @@ export default function StudentsPage() {
   };
 
   const getStudentImage = (student: Student) => {
-    if (student.photoUrl) return student.photoUrl;
-    if (student.photo) return student.photo;
-    return '/default-student.png'; // Fallback image
+    if (student.photoUrl && student.photoUrl.trim() !== '') {
+      return student.photoUrl;
+    }
+    
+    if (student.photo && student.photo.trim() !== '') {
+      // Handle base64 encoded images
+      if (student.photo.startsWith('data:image/')) {
+        return student.photo;
+      }
+      // Handle images that might be missing the data URL prefix
+      if (!student.photo.startsWith('http') && !student.photo.startsWith('/')) {
+        return `data:image/jpeg;base64,${student.photo}`;
+      }
+      return student.photo;
+    }
+    
+    return '/default-student.svg'; // Fallback image
   };
 
   const filteredStudents = students.filter(student => {
@@ -239,7 +253,7 @@ export default function StudentsPage() {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = '/default-student.png';
+                          target.src = '/default-student.svg';
                         }}
                       />
                       
