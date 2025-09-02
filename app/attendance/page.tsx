@@ -8,6 +8,7 @@ interface Student {
   studentId: string;
   firstName: string;
   lastName: string;
+  photo?: string;
   photoUrl?: string;
 }
 
@@ -99,16 +100,30 @@ export default function PublicAttendancePage() {
       }
 
       try {
-        const response = await fetch(`/api/students/search?q=${encodeURIComponent(term)}`);
-        const data = await response.json();
-        setStudents(data.students || []);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(`/api/students/search?q=${encodeURIComponent(term)}`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setStudents(data.students || []);
+        } else {
+          throw new Error('Search failed');
+        }
       } catch (error) {
-        console.error('Error searching students:', error);
-        toast.error('Failed to search students');
+        if (error.name !== 'AbortError') {
+          console.error('Error searching students:', error);
+          toast.error('Search failed - please try again');
+        }
       } finally {
         setSearchLoading(false);
       }
-    }, 300),
+    }, 200),
     []
   );
 
@@ -160,7 +175,7 @@ export default function PublicAttendancePage() {
       const data = await response.json();
       
       if (response.ok) {
-        toast.success(`Attendance marked successfully for ${student.firstName} ${student.lastName}`);
+        toast.success(`Attendance marked successfully for ${student.firstName.toUpperCase()} ${student.lastName.toUpperCase()}`);
         setSelectedStudent(null);
         setSearchTerm('');
         setStudents([]);
@@ -301,20 +316,24 @@ export default function PublicAttendancePage() {
                       onClick={() => setSelectedStudent(student)}
                       className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                     >
-                      <div className="flex-shrink-0 h-10 w-10">
-                        {student.photoUrl ? (
-                          <img className="h-10 w-10 rounded-full object-cover" src={student.photoUrl} alt="" />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
-                              {student.firstName[0]}{student.lastName[0]}
-                            </span>
-                          </div>
-                        )}
+                      <div className="flex-shrink-0 h-10 w-10 relative">
+                        <img 
+                          src={`/api/admin/students/${student.id}/photo?t=${Date.now()}`} 
+                          alt={`${student.firstName} ${student.lastName}`}
+                          className="h-10 w-10 rounded-full object-cover border-2 border-blue-200"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                        <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm hidden">
+                          {student.firstName[0]?.toUpperCase()}{student.lastName[0]?.toUpperCase()}
+                        </div>
                       </div>
                       <div className="ml-3">
                         <p className="text-sm font-medium text-gray-900">
-                          {student.firstName} {student.lastName}
+                          {student.firstName.toUpperCase()} {student.lastName.toUpperCase()}
                         </p>
                         <p className="text-sm text-gray-500">{student.studentId}</p>
                       </div>
@@ -337,20 +356,24 @@ export default function PublicAttendancePage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Attendance</h3>
             <div className="flex items-center mb-4">
-              <div className="flex-shrink-0 h-12 w-12">
-                {selectedStudent.photoUrl ? (
-                  <img className="h-12 w-12 rounded-full object-cover" src={selectedStudent.photoUrl} alt="" />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                    <span className="text-lg font-medium text-gray-700">
-                      {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
-                    </span>
-                  </div>
-                )}
+              <div className="flex-shrink-0 h-12 w-12 relative">
+                <img 
+                  src={`/api/admin/students/${selectedStudent.id}/photo?t=${Date.now()}`} 
+                  alt={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
+                  className="h-12 w-12 rounded-full object-cover border-2 border-blue-200"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg hidden">
+                  {selectedStudent.firstName[0]?.toUpperCase()}{selectedStudent.lastName[0]?.toUpperCase()}
+                </div>
               </div>
               <div className="ml-4">
                 <p className="text-lg font-medium text-gray-900">
-                  {selectedStudent.firstName} {selectedStudent.lastName}
+                  {selectedStudent.firstName.toUpperCase()} {selectedStudent.lastName.toUpperCase()}
                 </p>
                 <p className="text-sm text-gray-500">{selectedStudent.studentId}</p>
               </div>

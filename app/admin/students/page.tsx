@@ -821,7 +821,7 @@ export default function StudentsPage() {
                             </div>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 uppercase">
                               {student.firstName} {student.middleInitial} {student.lastName}
                             </div>
                             <div className="text-sm text-gray-500">{student.email}</div>
@@ -1063,7 +1063,7 @@ export default function StudentsPage() {
                     {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white">
+                    <h2 className="text-2xl font-bold text-white uppercase">
                       {selectedStudent.firstName} {selectedStudent.middleInitial} {selectedStudent.lastName}
                     </h2>
                     <p className="text-blue-100 font-medium">{selectedStudent.studentId}</p>
@@ -1151,7 +1151,7 @@ export default function StudentsPage() {
                       
                       {/* Student Info */}
                       <div className="px-1 mt-1">
-                        <div className="text-white text-xs font-semibold leading-tight">
+                        <div className="text-white text-xs font-semibold leading-tight uppercase">
                           {selectedStudent.firstName.split(' ')[0]} {selectedStudent.lastName.split(' ')[0]}
                         </div>
                         <div className="text-blue-200 text-xs font-mono mt-1">
@@ -1181,19 +1181,19 @@ export default function StudentsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Gender:</span>
-                      <span className="text-gray-900">{selectedStudent.gender || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.gender || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Age:</span>
-                      <span className="text-gray-900">{selectedStudent.age || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.age || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Birthday:</span>
-                      <span className="text-gray-900">{selectedStudent.birthday ? new Date(selectedStudent.birthday).toLocaleDateString() : 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.birthday ? new Date(selectedStudent.birthday).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Birth Place:</span>
-                      <span className="text-gray-900">{selectedStudent.birthPlace || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.birthPlace || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -1209,15 +1209,15 @@ export default function StudentsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Phone:</span>
-                      <span className="text-gray-900">{selectedStudent.contactNumber || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.contactNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Email:</span>
-                      <span className="text-gray-900 break-all">{selectedStudent.email || 'N/A'}</span>
+                      <span className="text-gray-900 break-all uppercase">{selectedStudent.email || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-gray-600 font-medium block mb-1">Address:</span>
-                      <span className="text-gray-900">
+                      <span className="text-gray-900 uppercase">
                         {[selectedStudent.address, selectedStudent.barangay, selectedStudent.city, selectedStudent.province, selectedStudent.zipCode].filter(Boolean).join(', ') || 'N/A'}
                       </span>
                     </div>
@@ -1235,21 +1235,21 @@ export default function StudentsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Name:</span>
-                      <span className="text-gray-900">
+                      <span className="text-gray-900 uppercase">
                         {[selectedStudent.guardianFirstName, selectedStudent.guardianMiddleInitial, selectedStudent.guardianLastName].filter(Boolean).join(' ') || 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Relationship:</span>
-                      <span className="text-gray-900">{selectedStudent.relationship || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.relationship || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Contact:</span>
-                      <span className="text-gray-900">{selectedStudent.guardianContact || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.guardianContact || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-gray-600 font-medium block mb-1">Address:</span>
-                      <span className="text-gray-900">{selectedStudent.guardianAddress || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.guardianAddress || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -1265,15 +1265,15 @@ export default function StudentsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">School:</span>
-                      <span className="text-gray-900 text-right">{selectedStudent.schoolName || 'N/A'}</span>
+                      <span className="text-gray-900 text-right uppercase">{selectedStudent.schoolName || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Course:</span>
-                      <span className="text-gray-900">{selectedStudent.course || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.course || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 font-medium">Year Graduated:</span>
-                      <span className="text-gray-900">{selectedStudent.yearGraduated || 'N/A'}</span>
+                      <span className="text-gray-900 uppercase">{selectedStudent.yearGraduated || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -1326,11 +1326,11 @@ export default function StudentsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600 font-medium">How did you hear about us:</span>
-                    <span className="text-gray-900">{selectedStudent.howDidYouHear || 'N/A'}</span>
+                    <span className="text-gray-900 uppercase">{selectedStudent.howDidYouHear || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 font-medium">Referred by:</span>
-                    <span className="text-gray-900">{selectedStudent.referredBy || 'None'}</span>
+                    <span className="text-gray-900 uppercase">{selectedStudent.referredBy || 'None'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 font-medium">Registration Date:</span>

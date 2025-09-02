@@ -18,6 +18,7 @@ export async function GET(request: Request) {
         ]
       },
       select: {
+        id: true,
         firstName: true,
         lastName: true,
         middleInitial: true,
