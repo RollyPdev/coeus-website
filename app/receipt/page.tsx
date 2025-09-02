@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface PaymentReceipt {
@@ -23,7 +23,7 @@ interface PaymentReceipt {
   };
 }
 
-export default function ReceiptPage() {
+function ReceiptContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get('paymentId');
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
@@ -270,5 +270,17 @@ export default function ReceiptPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReceiptPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <ReceiptContent />
+    </Suspense>
   );
 }
