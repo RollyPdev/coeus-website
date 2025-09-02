@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { NewsEventsSkeleton } from './SkeletonLoader';
 
 interface NewsEvent {
   id: string;
@@ -12,58 +13,74 @@ interface NewsEvent {
   featured: boolean;
 }
 
-const NewsEventsSection = () => {
+interface NewsEventsSectionProps {
+  excludeFeatured?: boolean;
+}
+
+const NewsEventsSection = ({ excludeFeatured = false }: NewsEventsSectionProps) => {
   const [newsEvents, setNewsEvents] = useState<NewsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchNewsEvents = async () => {
-      try {
-        console.log('Fetching news events...');
-        const response = await fetch('/api/news-events');
-        console.log('Response status:', response.status);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Fetched news events:', data);
-          setNewsEvents(data.map((item: any) => ({
-            ...item,
-            date: new Date(item.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })
-          })));
-        } else {
-          console.error('Failed to fetch news events:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error fetching news events:', error);
-      } finally {
-        setLoading(false);
+    setNewsEvents([
+      {
+        id: '1',
+        title: "Upcoming Criminology Review Batch",
+        date: "September 1, 2023",
+        category: "event",
+        image: "/learning-1.jpg",
+        summary: "New Criminology Review batch starting September with early bird discount.",
+        content: "Join our comprehensive Criminology Review program starting this September. Early bird discount available for the first 50 enrollees.",
+        featured: true
+      },
+      {
+        id: '2',
+        title: "Coeus Celebrates 10 Years of Excellence",
+        date: "June 1, 2023",
+        category: "news",
+        image: "/image-1.jpg",
+        summary: "Coeus Review celebrates 10 years of helping students achieve their professional goals.",
+        content: "We are proud to celebrate our 10th anniversary of providing quality review programs.",
+        featured: false
+      },
+      {
+        id: '3',
+        title: "New Nursing Review Program",
+        date: "August 15, 2023",
+        category: "news",
+        image: "/image-1.jpg",
+        summary: "Introducing our enhanced Nursing Review Program with updated curriculum.",
+        content: "We are excited to announce our enhanced Nursing Review Program.",
+        featured: false
+      },
+      {
+        id: '4',
+        title: "Career Development Workshop",
+        date: "July 20, 2023",
+        category: "event",
+        image: "/learning-1.jpg",
+        summary: "Join our career development workshop for professional growth.",
+        content: "Enhance your career prospects with our comprehensive workshop.",
+        featured: false
       }
-    };
-
-    fetchNewsEvents();
+    ]);
+    setLoading(false);
   }, []);
 
   if (loading) {
-    return (
-      <section className="py-16 bg-white" id="news-events">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading news and events...</p>
-          </div>
-        </div>
-      </section>
-    );
+    return <NewsEventsSkeleton />;
   }
   
-  const filteredItems = activeTab === 'all' 
+  let filteredItems = activeTab === 'all' 
     ? newsEvents 
     : newsEvents.filter(item => item.category.toLowerCase() === activeTab);
+  
+  // Exclude featured items if requested
+  if (excludeFeatured) {
+    filteredItems = filteredItems.filter(item => !item.featured);
+  }
 
   return (
     <section className="py-16 bg-white" id="news-events">

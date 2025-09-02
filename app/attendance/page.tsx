@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/lib/toast';
 
 interface Student {
@@ -17,6 +17,7 @@ export default function PublicAttendancePage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [locationAllowed, setLocationAllowed] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [qrCode, setQrCode] = useState('');
@@ -88,23 +89,37 @@ export default function PublicAttendancePage() {
     return distance <= ALLOWED_RADIUS;
   };
 
-  const searchStudents = async (term: string) => {
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce(async (term: string) => {
+      if (term.length < 2) {
+        setStudents([]);
+        setSearchLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/students/search?q=${encodeURIComponent(term)}`);
+        const data = await response.json();
+        setStudents(data.students || []);
+      } catch (error) {
+        console.error('Error searching students:', error);
+        toast.error('Failed to search students');
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  const searchStudents = (term: string) => {
     if (term.length < 2) {
       setStudents([]);
+      setSearchLoading(false);
       return;
     }
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/students/search?q=${encodeURIComponent(term)}`);
-      const data = await response.json();
-      setStudents(data.students || []);
-    } catch (error) {
-      console.error('Error searching students:', error);
-      toast.error('Failed to search students');
-    } finally {
-      setLoading(false);
-    }
+    setSearchLoading(true);
+    debouncedSearch(term);
   };
 
   const handleQRScan = async (qrData: string) => {
@@ -159,6 +174,15 @@ export default function PublicAttendancePage() {
       setLoading(false);
     }
   };
+
+  // Debounce utility function
+  function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+    let timeout: NodeJS.Timeout;
+    return ((...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    }) as T;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -262,19 +286,20 @@ export default function PublicAttendancePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
               />
               
-              {loading && (
+              {searchLoading && (
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-sm text-gray-500 mt-2">Searching...</p>
                 </div>
               )}
               
-              {students.length > 0 && (
+              {!searchLoading && students.length > 0 && (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {students.map((student) => (
                     <div
                       key={student.id}
                       onClick={() => setSelectedStudent(student)}
-                      className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                     >
                       <div className="flex-shrink-0 h-10 w-10">
                         {student.photoUrl ? (
@@ -295,6 +320,12 @@ export default function PublicAttendancePage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              
+              {!searchLoading && searchTerm.length >= 2 && students.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">No students found</p>
                 </div>
               )}
             </div>

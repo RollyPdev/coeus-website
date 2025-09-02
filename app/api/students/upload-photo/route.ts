@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +17,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, student });
   } catch (error) {
     console.error('Upload error:', error);
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
 }

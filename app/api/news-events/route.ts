@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { newsEvents } from '@/data/newsEvents';
 
 export async function GET() {
   try {
-    const newsEvents = await prisma.newsEvent.findMany({
-      orderBy: {
-        date: 'desc'
-      }
+    const newsEventsFromDB = await prisma.newsEvent.findMany({
+      orderBy: { date: 'desc' }
     });
-
-    return NextResponse.json(newsEvents);
+    
+    // Return DB data if available, otherwise fallback
+    return NextResponse.json(newsEventsFromDB.length > 0 ? newsEventsFromDB : newsEvents);
   } catch (error) {
     console.error('Error fetching news events:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch news events' },
-      { status: 500 }
-    );
+    // Fallback to static data on DB error
+    return NextResponse.json(newsEvents);
   }
 }
 

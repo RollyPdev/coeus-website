@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PhotoUpload from "../../../../components/admin/PhotoUpload";
 
 export default function NewNewsEventPage() {
   const router = useRouter();
@@ -27,15 +28,28 @@ export default function NewNewsEventPage() {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/news-events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        router.push('/admin/news-events');
+      } else {
+        alert('Failed to create news/event');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error creating news/event');
+    } finally {
       setIsSubmitting(false);
-      router.push("/admin/news-events");
-    }, 1000);
+    }
   };
   
   return (
@@ -91,20 +105,10 @@ export default function NewNewsEventPage() {
             </select>
           </div>
           
-          <div>
-            <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input
-              type="text"
-              id="image"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          <PhotoUpload
+            currentImage={formData.image}
+            onImageChange={(url) => setFormData(prev => ({ ...prev, image: url }))}
+          />
         </div>
         
         <div>

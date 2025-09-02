@@ -60,6 +60,13 @@ export default function ProgramsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Get admin token from localStorage
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        alert('Please log in again to save programs');
+        return;
+      }
+      
       const url = '/api/admin/programs';
       const method = editingProgram ? 'PUT' : 'POST';
       const body = editingProgram ? { id: editingProgram.id, ...formData } : formData;
@@ -69,7 +76,10 @@ export default function ProgramsPage() {
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(programData)
       });
 
@@ -98,9 +108,20 @@ export default function ProgramsPage() {
   const uploadPhoto = async (programId: string, photoData: string) => {
     try {
       setUploadingPhoto(true);
+      
+      // Get admin token from localStorage
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        console.error('No admin token found');
+        return;
+      }
+      
       const response = await fetch(`/api/admin/programs/${programId}/photo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ image: photoData })
       });
 
@@ -187,10 +208,20 @@ export default function ProgramsPage() {
       setDeletingId(programId); // Set loading state for this specific program
       setDeleteConfirm({show: false, programId: '', programTitle: ''}); // Hide confirmation modal
       
+      // Get admin token from localStorage
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        showNotification('Please log in again to delete programs', 'error');
+        return;
+      }
+      
       console.log('Sending DELETE request...'); // Debug log
       const response = await fetch('/api/admin/programs', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ id: programId })
       });
       

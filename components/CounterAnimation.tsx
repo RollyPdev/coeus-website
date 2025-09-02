@@ -13,7 +13,7 @@ const CounterAnimation: React.FC<CounterProps> = ({ end, duration = 2000, suffix
   const [isVisible, setIsVisible] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -45,7 +45,9 @@ const CounterAnimation: React.FC<CounterProps> = ({ end, duration = 2000, suffix
       const timePassed = Date.now() - startTime;
       const progress = Math.min(timePassed / duration, 1);
       
-      const currentCount = Math.floor(progress * end);
+      // Easing function for smoother animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentCount = Math.floor(easeOutQuart * end);
       setCount(currentCount);
       
       if (progress < 1) {
@@ -64,8 +66,8 @@ const CounterAnimation: React.FC<CounterProps> = ({ end, duration = 2000, suffix
 
   return (
     <div ref={ref} className="inline-block">
-      <span className="text-4xl font-bold">{count}</span>
-      {suffix}
+      <span className="text-4xl font-bold transition-all duration-100">{count}</span>
+      {suffix && <span className="text-4xl font-bold">{suffix}</span>}
     </div>
   );
 };

@@ -1,29 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { newsEvents as initialNewsEvents } from "../../../data/newsEvents";
+import { AdminTableSkeleton } from "../../../components/SkeletonLoader";
 
 export default function NewsEventsPage() {
   const [newsEvents, setNewsEvents] = useState(initialNewsEvents);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    fetchNewsEvents();
+  }, []);
+  
+  const fetchNewsEvents = async () => {
+    try {
+      setError(null);
+      const response = await fetch('/api/news-events');
+      if (response.ok) {
+        const data = await response.json();
+        setNewsEvents(data);
+      } else {
+        setError('Failed to fetch news events');
+      }
+    } catch (error) {
+      console.error('Error fetching news events:', error);
+      setError('Error loading news events');
+    } finally {
+      setLoading(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState("all");
   
   const filteredItems = activeTab === "all" 
     ? newsEvents 
     : newsEvents.filter(item => item.category === activeTab);
   
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this item?")) {
-      setNewsEvents(newsEvents.filter(item => item.id !== id));
+      try {
+        const response = await fetch(`/api/news-events/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          setNewsEvents(newsEvents.filter(item => item.id !== id));
+        } else {
+          alert('Failed to delete item');
+        }
+      } catch (error) {
+        console.error('Error deleting:', error);
+        alert('Error deleting item');
+      }
     }
   };
   
-  const handleFeature = (id: string) => {
-    setNewsEvents(newsEvents.map(item => 
-      item.id === id 
-        ? { ...item, featured: true } 
-        : { ...item, featured: item.id === id ? true : false }
-    ));
+  const handleFeature = async (id: string) => {
+    try {
+      const response = await fetch(`/api/news-events/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: true })
+      });
+      
+      if (response.ok) {
+        setNewsEvents(newsEvents.map(item => 
+          item.id === id 
+            ? { ...item, featured: true } 
+            : { ...item, featured: false }
+        ));
+      } else {
+        alert('Failed to feature item');
+      }
+    } catch (error) {
+      console.error('Error featuring:', error);
+      alert('Error featuring item');
+    }
   };
 
   return (
@@ -37,6 +90,18 @@ export default function NewsEventsPage() {
           Add New Item
         </Link>
       </div>
+      
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={fetchNewsEvents}
+            className="mt-2 text-sm text-red-700 hover:text-red-900 underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
       
       {/* Filter Tabs */}
       <div className="mb-6">
@@ -74,9 +139,12 @@ export default function NewsEventsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      {loading ? (
+        <AdminTableSkeleton />
+      ) : (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -171,9 +239,10 @@ export default function NewsEventsPage() {
                 </tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

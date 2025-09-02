@@ -17,12 +17,12 @@ const TestimonialsSection = () => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Auto-advance the slider
-  const nextSlide = useCallback(() => {
-    if (isAnimating) return;
+  const nextSlide = () => {
+    if (isAnimating || testimonials.length === 0) return;
     setIsAnimating(true);
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
     setTimeout(() => setIsAnimating(false), 500);
-  }, [isAnimating, testimonials.length]);
+  };
 
   useEffect(() => {
     const fetchTestimonials = async () => {
@@ -50,10 +50,13 @@ const TestimonialsSection = () => {
   // Auto-advance every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      nextSlide();
+      if (isAnimating || testimonials.length === 0) return;
+      setIsAnimating(true);
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+      setTimeout(() => setIsAnimating(false), 500);
     }, 5000);
     return () => clearInterval(interval);
-  }, [nextSlide]);
+  }, [isAnimating, testimonials.length]);
 
   if (loading) {
     return (
@@ -70,13 +73,13 @@ const TestimonialsSection = () => {
   
   // Calculate the indices of visible testimonials (3 at a time)
   const visibleIndices = testimonials.length > 0 ? [
-    currentIndex,
+    currentIndex % testimonials.length,
     (currentIndex + 1) % testimonials.length,
     (currentIndex + 2) % testimonials.length
   ] : [];
   
   const prevSlide = () => {
-    if (isAnimating) return;
+    if (isAnimating || testimonials.length === 0) return;
     setIsAnimating(true);
     setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
     setTimeout(() => setIsAnimating(false), 500);
@@ -107,13 +110,13 @@ const TestimonialsSection = () => {
         
         <div className="relative">
           {/* Testimonials slider */}
-          <div className="flex justify-center gap-4 md:gap-8 overflow-hidden px-4">
-            {visibleIndices.map((idx, i) => (
+          <div className="flex justify-center gap-4 md:gap-8 px-4">
+            {testimonials.length > 0 && visibleIndices.map((idx, i) => (
               <div 
                 key={idx} 
                 className={`relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 transform ${
                   isAnimating ? 'opacity-80 scale-95' : 'opacity-100 scale-100'
-                } ${i === 1 ? 'md:scale-110 z-10' : 'z-0'}`}
+                } ${i === 1 ? 'md:scale-110 z-10' : 'z-0'} min-h-[280px] flex flex-col`}
               >
                 <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
                   <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
@@ -123,22 +126,24 @@ const TestimonialsSection = () => {
                   </div>
                 </div>
                 
-                <div className="pt-6 text-center">
-                  <div className="flex justify-center mb-3">
-                    {renderStars(testimonials[idx].rating)}
+                <div className="pt-6 text-center flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-center mb-3">
+                      {testimonials[idx] && renderStars(testimonials[idx].rating)}
+                    </div>
+                    
+                    <p className="italic text-gray-700 mb-6 text-sm leading-relaxed">&quot;{testimonials[idx]?.text}&quot;</p>
                   </div>
                   
-                  <p className="italic text-gray-700 mb-6">&quot;{testimonials[idx].text}&quot;</p>
-                  
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center mt-auto">
                     <img 
-                      src={testimonials[idx].image} 
-                      alt={testimonials[idx].name} 
+                      src={testimonials[idx]?.image} 
+                      alt={testimonials[idx]?.name} 
                       className="w-14 h-14 rounded-full border-2 border-blue-600 object-cover mr-3" 
                     />
                     <div className="text-left">
-                      <h4 className="font-bold text-blue-900">{testimonials[idx].name}</h4>
-                      <p className="text-sm text-gray-600">{testimonials[idx].role}</p>
+                      <h4 className="font-bold text-blue-900">{testimonials[idx]?.name}</h4>
+                      <p className="text-sm text-gray-600">{testimonials[idx]?.role}</p>
                     </div>
                   </div>
                 </div>
@@ -169,8 +174,9 @@ const TestimonialsSection = () => {
         </div>
         
         {/* Dots navigation */}
-        <div className="flex justify-center mt-8 space-x-2">
-          {testimonials.map((_, idx) => (
+        {testimonials.length > 0 && (
+          <div className="flex justify-center mt-8 space-x-2">
+            {testimonials.map((_, idx) => (
             <button
               key={idx}
               onClick={() => {
@@ -184,8 +190,9 @@ const TestimonialsSection = () => {
               }`}
               aria-label={`Go to testimonial ${idx + 1}`}
             />
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         
         {/* CTA */}
         <div className="text-center mt-12">

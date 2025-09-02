@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { newsEvents } from "../../../../data/newsEvents";
+import PhotoUpload from "../../../../components/admin/PhotoUpload";
 
-export default function EditNewsEventPage({ params }: { params: { id: string } }) {
+export default function EditNewsEventPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
@@ -17,24 +18,37 @@ export default function EditNewsEventPage({ params }: { params: { id: string } }
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   
   useEffect(() => {
-    const item = newsEvents.find(item => item.id === params.id);
-    if (item) {
-      setFormData({
-        title: item.title,
-        date: item.date,
-        category: item.category,
-        image: item.image,
-        summary: item.summary,
-        content: item.content,
-        featured: item.featured
-      });
-    } else {
+    fetchNewsEvent();
+  }, [id]);
+  
+  const fetchNewsEvent = async () => {
+    try {
+      const response = await fetch(`/api/news-events/${id}`);
+      if (response.ok) {
+        const item = await response.json();
+        setFormData({
+          title: item.title,
+          date: item.date.split('T')[0],
+          category: item.category,
+          image: item.image,
+          summary: item.summary,
+          content: item.content,
+          featured: item.featured
+        });
+      } else if (response.status === 404) {
+        setNotFound(true);
+      }
+    } catch (error) {
+      console.error('Error fetching news event:', error);
       setNotFound(true);
+    } finally {
+      setLoading(false);
     }
-  }, [params.id]);
+  };
   
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -46,16 +60,38 @@ export default function EditNewsEventPage({ params }: { params: { id: string } }
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch(`/api/news-events/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        router.push('/admin/news-events');
+      } else {
+        alert('Failed to update news/event');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error updating news/event');
+    } finally {
       setIsSubmitting(false);
-      router.push("/admin/news-events");
-    }, 1000);
+    }
   };
+  
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
+        <p className="text-gray-600 mt-4">Loading...</p>
+      </div>
+    );
+  }
   
   if (notFound) {
     return (
@@ -125,20 +161,10 @@ export default function EditNewsEventPage({ params }: { params: { id: string } }
             </select>
           </div>
           
-          <div>
-            <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input
-              type="text"
-              id="image"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          <PhotoUpload
+            currentImage={formData.image}
+            onImageChange={(url) => setFormData(prev => ({ ...prev, image: url }))}
+          />
         </div>
         
         <div>
