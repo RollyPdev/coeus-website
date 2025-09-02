@@ -83,35 +83,79 @@ export default function Home() {
         </section>
         
         {/* Stats Section */}
-        <section className="py-16 bg-blue-900 text-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-20 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white relative overflow-hidden">
+          {/* Animated background elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+            <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
+            <div className="absolute bottom-32 right-1/3 w-14 h-14 bg-white rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+          </div>
+          
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fade-in-up">Our Achievements</h2>
+              <div className="w-24 h-1 bg-white mx-auto animate-fade-in-up" style={{animationDelay: '0.2s'}}></div>
+            </div>
+            
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div className="p-4 transform transition-all duration-500 hover:scale-110">
-                <div className="text-4xl font-bold mb-2 flex justify-center">
-                  <CounterAnimation end={1000} suffix="+" />
+              <div className="p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
+                <div className="text-5xl mb-4 group-hover:animate-pulse">
+                  📚
                 </div>
-                <div className="text-blue-200">Students Trained</div>
+                <div className="text-4xl font-bold mb-3 flex justify-center text-yellow-300">
+                  <CounterAnimation end={2500} suffix="+" duration={3000} />
+                </div>
+                <div className="text-blue-200 font-medium">Students Trained</div>
               </div>
-              <div className="p-4 transform transition-all duration-500 hover:scale-110">
-                <div className="text-4xl font-bold mb-2 flex justify-center">
-                  <CounterAnimation end={95} suffix="%" />
+              
+              <div className="p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
+                <div className="text-5xl mb-4 group-hover:animate-pulse">
+                  🎯
                 </div>
-                <div className="text-blue-200">Passing Rate</div>
+                <div className="text-4xl font-bold mb-3 flex justify-center text-green-300">
+                  <CounterAnimation end={98} suffix="%" duration={2800} />
+                </div>
+                <div className="text-blue-200 font-medium">Passing Rate</div>
               </div>
-              <div className="p-4 transform transition-all duration-500 hover:scale-110">
-                <div className="text-4xl font-bold mb-2 flex justify-center">
-                  <CounterAnimation end={50} suffix="+" />
+              
+              <div className="p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
+                <div className="text-5xl mb-4 group-hover:animate-pulse">
+                  👨‍🏫
                 </div>
-                <div className="text-blue-200">Expert Lecturers</div>
+                <div className="text-4xl font-bold mb-3 flex justify-center text-blue-300">
+                  <CounterAnimation end={75} suffix="+" duration={2600} />
+                </div>
+                <div className="text-blue-200 font-medium">Expert Lecturers</div>
               </div>
-              <div className="p-4 transform transition-all duration-500 hover:scale-110">
-                <div className="text-4xl font-bold mb-2 flex justify-center">
-                  <CounterAnimation end={10} suffix="+" />
+              
+              <div className="p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
+                <div className="text-5xl mb-4 group-hover:animate-pulse">
+                  ⭐
                 </div>
-                <div className="text-blue-200">Years Experience</div>
+                <div className="text-4xl font-bold mb-3 flex justify-center text-orange-300">
+                  <CounterAnimation end={15} suffix="+" duration={2400} />
+                </div>
+                <div className="text-blue-200 font-medium">Years Experience</div>
               </div>
             </div>
           </div>
+          
+          <style jsx>{`
+            @keyframes fade-in-up {
+              from {
+                opacity: 0;
+                transform: translateY(30px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            .animate-fade-in-up {
+              animation: fade-in-up 0.8s ease-out forwards;
+            }
+          `}</style>
         </section>
         
         {/* Featured Story Section */}
