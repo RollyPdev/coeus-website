@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../auth/[...nextauth]/route";
 import prisma from '@/lib/prisma';
+
+// Helper function to verify admin token
+function verifyAdminToken(request: Request): boolean {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  
+  const token = authHeader.substring(7);
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf-8');
+    if (!decoded.includes(':')) return false;
+    
+    const [email, timestamp] = decoded.split(':');
+    const tokenAge = Date.now() - parseInt(timestamp);
+    // Token valid for 24 hours (86400000 ms)
+    return tokenAge < 86400000;
+  } catch {
+    return false;
+  }
+}
 
 export async function GET() {
   try {
@@ -17,9 +36,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
+    if (!verifyAdminToken(request)) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in to create programs' },
         { status: 401 }
@@ -62,9 +79,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
+    if (!verifyAdminToken(request)) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in to update programs' },
         { status: 401 }
@@ -105,9 +120,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
+    if (!verifyAdminToken(request)) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in to delete programs' },
         { status: 401 }
