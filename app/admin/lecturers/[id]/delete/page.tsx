@@ -1,24 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function DeleteLecturerPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [lecturerId, setLecturerId] = useState<string>("");
+
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setLecturerId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
 
   const handleDelete = async () => {
+    if (!lecturerId) return;
+    
     setIsDeleting(true);
     setError("");
 
     try {
-      const response = await fetch(`/api/lecturers/${params.id}`, {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        setIsDeleting(false);
+        return;
+      }
+
+      const response = await fetch(`/api/lecturers/${lecturerId}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {

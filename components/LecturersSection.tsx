@@ -41,9 +41,28 @@ const LecturersSection = () => {
     return (
       <section className="py-20 bg-gradient-to-b from-white to-blue-50" id="lecturers">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading lecturers...</p>
+          <div className="text-center mb-12">
+            <div className="h-10 bg-gray-200 rounded-lg w-96 mx-auto mb-4 animate-pulse"></div>
+            <div className="w-24 h-1 bg-gray-200 mx-auto mb-6 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-2/3 mx-auto animate-pulse"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[...Array(8)].map((_, idx) => (
+              <div key={idx} className="bg-white rounded-xl overflow-hidden shadow-md">
+                <div className="h-64 bg-gray-200 animate-pulse"></div>
+                <div className="p-4">
+                  <div className="h-5 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-3 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-4/5 mb-3 animate-pulse"></div>
+                  <div className="flex items-center justify-between">
+                    <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

@@ -5,11 +5,12 @@ import { notFound } from "next/navigation";
 export default async function EditLecturerPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const lecturer = await prisma.lecturer.findUnique({
     where: {
-      id: params.id,
+      id,
     },
   });
 

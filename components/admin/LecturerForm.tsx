@@ -87,9 +87,13 @@ export default function LecturerForm({
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
         
+        const token = localStorage.getItem('adminToken');
         const response = await fetch(`/api/lecturers/${lecturer.id}/photo`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ photo: base64 })
         });
         
@@ -117,6 +121,14 @@ export default function LecturerForm({
     setError("");
 
     try {
+      // Get auth token
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // For new lecturers, include photo data in the main request
       let submitData = { ...formData };
       
@@ -149,6 +161,7 @@ export default function LecturerForm({
         method,
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(submitData),
       });

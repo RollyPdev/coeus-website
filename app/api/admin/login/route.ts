@@ -1,21 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 
-// Simple login without external dependencies
+const prisma = new PrismaClient();
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Simple hardcoded admin credentials for now
-    const validCredentials = [
-      { email: 'admin@coeus.com', password: 'admin123' },
-      { email: 'coeus@admin.com', password: 'admin123' }
-    ];
+    // Find user in database
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true
+      }
+    });
 
-    const isValid = validCredentials.some(
-      cred => cred.email === email && cred.password === password
-    );
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
 
-    if (!isValid) {
+    // Compare password with hashed password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
       return NextResponse.json(
         { success: false, message: 'Invalid credentials' },
         { status: 401 }
@@ -28,10 +41,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       token,
-      message: 'Login successful'
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        email: user.email
+      }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
       { success: false, message: `Server error: ${error.message}` },
       { status: 500 }

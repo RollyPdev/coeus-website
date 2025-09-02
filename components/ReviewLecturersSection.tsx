@@ -1,105 +1,85 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-// Sample lecturer data - replace with actual data
-const lecturers = {
-  criminology: [
-    {
-      name: "Dr. James Wilson",
-      photo: "/learning-1.jpg",
-      position: "Criminal Law Expert",
-      credentials: "PhD in Criminal Justice, Former Police Chief",
-      subjects: ["Criminal Law", "Criminal Procedure", "Police Administration"]
-    },
-    {
-      name: "Atty. Maria Santos",
-      photo: "/image-1.jpg",
-      position: "Legal Expert",
-      credentials: "JD, LLM in Criminal Law",
-      subjects: ["Criminal Jurisprudence", "Legal Medicine", "Evidence"]
-    },
-    {
-      name: "Prof. Robert Garcia",
-      photo: "/image-2.jpg",
-      position: "Criminology Specialist",
-      credentials: "MS in Criminology, Certified Forensic Investigator",
-      subjects: ["Criminalistics", "Crime Detection", "Forensic Science"]
-    },
-    {
-      name: "Col. David Tan",
-      photo: "/image-3.jpg",
-      position: "Security Management Expert",
-      credentials: "BS Criminology, 25 years in Law Enforcement",
-      subjects: ["Security Management", "Criminal Sociology", "Correctional Administration"]
-    }
-  ],
-  nursing: [
-    {
-      name: "Dr. Elena Cruz",
-      photo: "/learning-1.jpg",
-      position: "Medical-Surgical Nursing Specialist",
-      credentials: "PhD in Nursing, RN",
-      subjects: ["Medical-Surgical Nursing", "Fundamentals of Nursing", "Nursing Research"]
-    },
-    {
-      name: "Dr. Michael Reyes",
-      photo: "/image-1.jpg",
-      position: "Pediatric Nursing Expert",
-      credentials: "DNP, RN, Pediatric Nurse Practitioner",
-      subjects: ["Pediatric Nursing", "Health Assessment", "Growth and Development"]
-    },
-    {
-      name: "Prof. Sarah Johnson",
-      photo: "/image-2.jpg",
-      position: "Maternal and Child Health Specialist",
-      credentials: "MSN, RN, Midwife",
-      subjects: ["Maternal and Child Nursing", "Obstetrics", "Family Health"]
-    },
-    {
-      name: "Dr. Benjamin Lee",
-      photo: "/image-3.jpg",
-      position: "Community Health Expert",
-      credentials: "PhD in Public Health, RN",
-      subjects: ["Community Health Nursing", "Public Health Administration", "Epidemiology"]
-    }
-  ],
-  cpd: [
-    {
-      name: "Dr. Sophia Rodriguez",
-      photo: "/learning-1.jpg",
-      position: "Professional Ethics Specialist",
-      credentials: "PhD in Philosophy, Certified Ethics Trainer",
-      subjects: ["Professional Ethics", "Ethical Standards", "Professional Responsibility"]
-    },
-    {
-      name: "Engr. Carlos Mendoza",
-      photo: "/image-1.jpg",
-      position: "Engineering Management Expert",
-      credentials: "MS in Engineering Management, PMP",
-      subjects: ["Project Management", "Engineering Ethics", "Leadership"]
-    },
-    {
-      name: "Dr. Amelia Tan",
-      photo: "/image-2.jpg",
-      position: "Healthcare Management Specialist",
-      credentials: "PhD in Healthcare Administration, MBA",
-      subjects: ["Healthcare Management", "Quality Improvement", "Patient Safety"]
-    },
-    {
-      name: "Atty. John Santos",
-      photo: "/image-3.jpg",
-      position: "Legal and Compliance Expert",
-      credentials: "JD, Certified Compliance Professional",
-      subjects: ["Legal Compliance", "Risk Management", "Corporate Governance"]
-    }
-  ]
-};
+interface Lecturer {
+  id: string;
+  name: string;
+  photo: string;
+  position: string;
+  credentials: string;
+  bio: string;
+  specialization: string;
+  category: string;
+  subjects: string;
+}
 
 const ReviewLecturersSection = () => {
   const [activeTab, setActiveTab] = useState('criminology');
   const [selectedLecturer, setSelectedLecturer] = useState<number | null>(null);
+  const [lecturers, setLecturers] = useState<Lecturer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLecturers = async () => {
+      try {
+        const response = await fetch('/api/lecturers');
+        if (response.ok) {
+          const data = await response.json();
+          setLecturers(data);
+        }
+      } catch (error) {
+        console.error('Error fetching lecturers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLecturers();
+  }, []);
   
-  const activeLecturers = lecturers[activeTab as keyof typeof lecturers];
+  const activeLecturers = lecturers.filter(lecturer => lecturer.category === activeTab);
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-gradient-to-b from-blue-50 to-white" id="lecturers">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="h-10 bg-gray-200 rounded-lg w-80 mx-auto mb-4 animate-pulse"></div>
+            <div className="w-24 h-1 bg-gray-200 mx-auto mb-6 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+          </div>
+          
+          {/* Category Tabs Skeleton */}
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex rounded-md shadow-sm">
+              <div className="h-12 w-32 bg-gray-200 rounded-l-lg animate-pulse"></div>
+              <div className="h-12 w-24 bg-gray-200 animate-pulse"></div>
+              <div className="h-12 w-32 bg-gray-200 rounded-r-lg animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* Lecturers Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[...Array(4)].map((_, idx) => (
+              <div key={idx} className="bg-white rounded-xl overflow-hidden shadow-md">
+                <div className="h-64 bg-gray-200 animate-pulse"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full mb-3 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3 mb-3 animate-pulse"></div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="h-6 bg-gray-200 rounded-full w-16 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded-full w-14 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-gradient-to-b from-blue-50 to-white" id="lecturers">
@@ -173,12 +153,12 @@ const ReviewLecturersSection = () => {
                 <div>
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Subjects</h4>
                   <div className="flex flex-wrap gap-2">
-                    {lecturer.subjects.map((subject, i) => (
+                    {lecturer.subjects.split(',').map((subject, i) => (
                       <span 
                         key={i} 
                         className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
                       >
-                        {subject}
+                        {subject.trim()}
                       </span>
                     ))}
                   </div>
@@ -249,12 +229,12 @@ const ReviewLecturersSection = () => {
                 <div>
                   <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Subjects</h4>
                   <div className="flex flex-wrap gap-2">
-                    {activeLecturers[selectedLecturer].subjects.map((subject, i) => (
+                    {activeLecturers[selectedLecturer].subjects.split(',').map((subject, i) => (
                       <span 
                         key={i} 
                         className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
                       >
-                        {subject}
+                        {subject.trim()}
                       </span>
                     ))}
                   </div>
