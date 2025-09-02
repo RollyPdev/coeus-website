@@ -1399,12 +1399,37 @@ export default function StudentsPage() {
             </div>
 
             {/* Edit Form */}
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              // Handle form submission here
-              console.log('Updated student data:', editFormData);
-              setShowEditModal(false);
-              // You can add API call to update student here
+              setIsSubmitting(true);
+              
+              try {
+                const response = await fetch(`/api/admin/students/${editFormData.id}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(editFormData),
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                  alert('Student updated successfully!');
+                  setShowEditModal(false);
+                  // Refresh students list
+                  const studentsResponse = await fetch('/api/admin/students?limit=1000');
+                  const studentsData = await studentsResponse.json();
+                  setStudents(studentsData.students || []);
+                } else {
+                  alert(`Failed to update student: ${result.error}`);
+                }
+              } catch (error) {
+                console.error('Error updating student:', error);
+                alert('Error updating student');
+              } finally {
+                setIsSubmitting(false);
+              }
             }}>
               <div className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1653,9 +1678,10 @@ export default function StudentsPage() {
                 </button>
                 <button 
                   type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save Changes
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

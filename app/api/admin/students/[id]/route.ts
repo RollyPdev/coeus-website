@@ -41,3 +41,45 @@ export async function GET(
     );
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const data = await request.json();
+
+    const updatedStudent = await prisma.student.update({
+      where: { id },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleInitial: data.middleInitial,
+        gender: data.gender,
+        age: data.age,
+        birthPlace: data.birthPlace,
+        contactNumber: data.contactNumber,
+        email: data.email,
+        address: data.address,
+        city: data.city,
+        province: data.province,
+        guardianFirstName: data.guardianFirstName,
+        guardianLastName: data.guardianLastName,
+        guardianContact: data.guardianContact,
+        relationship: data.relationship,
+        schoolName: data.schoolName,
+        course: data.course,
+        yearGraduated: data.yearGraduated
+      }
+    });
+
+    return NextResponse.json({ success: true, student: updatedStudent });
+  } catch (error) {
+    console.error('Error updating student:', error);
+    return NextResponse.json(
+      { error: 'Failed to update student' },
+      { status: 500 }
+    );
+  }
+}

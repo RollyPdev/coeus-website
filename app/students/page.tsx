@@ -99,6 +99,115 @@ export default function StudentsPage() {
     return '/default-student.svg';
   };
 
+  // Facebook-style skeleton loading component
+  const SkeletonCard = () => (
+    <div className="group bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-white/20 animate-pulse">
+      {/* Photo Skeleton */}
+      <div className="relative h-64 bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-full bg-gray-300 relative overflow-hidden">
+          {/* Shimmer Effect */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+        </div>
+        {/* Status Badge Skeleton */}
+        <div className="absolute top-4 right-4 w-16 h-6 bg-gray-300 rounded-full">
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+        </div>
+      </div>
+      
+      {/* Content Skeleton */}
+      <div className="p-6 space-y-4">
+        {/* Name Skeleton */}
+        <div className="space-y-2">
+          <div className="h-6 bg-gray-300 rounded-lg w-3/4 relative overflow-hidden">
+            <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+          </div>
+        </div>
+        
+        {/* Details Skeleton */}
+        <div className="space-y-3">
+          {/* ID Row */}
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gray-300 rounded relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+            <div className="h-4 bg-gray-300 rounded w-20 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+          </div>
+          
+          {/* School Row */}
+          <div className="flex items-start space-x-2">
+            <div className="w-4 h-4 bg-gray-300 rounded mt-0.5 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+            <div className="space-y-1 flex-1">
+              <div className="h-4 bg-gray-300 rounded w-16 relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+              </div>
+              <div className="h-4 bg-gray-300 rounded w-full relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Year Row */}
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gray-300 rounded relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+            <div className="h-4 bg-gray-300 rounded w-24 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+          </div>
+          
+          {/* Course Row */}
+          <div className="flex items-start space-x-2">
+            <div className="w-4 h-4 bg-gray-300 rounded mt-0.5 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+            <div className="space-y-1 flex-1">
+              <div className="h-4 bg-gray-300 rounded w-16 relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+              </div>
+              <div className="h-4 bg-gray-300 rounded w-4/5 relative overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Programs Section Skeleton */}
+        <div className="pt-4 border-t border-gray-200">
+          <div className="h-3 bg-gray-300 rounded w-20 mb-2 relative overflow-hidden">
+            <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <div className="h-6 bg-gray-300 rounded-full w-20 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+            <div className="h-6 bg-gray-300 rounded-full w-24 relative overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Statistics skeleton component
+  const StatsSkeletonCard = () => (
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 animate-pulse">
+      <div className="text-center">
+        <div className="h-10 bg-gray-300 rounded-lg w-16 mx-auto mb-2 relative overflow-hidden">
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+        </div>
+        <div className="h-4 bg-gray-300 rounded w-24 mx-auto relative overflow-hidden">
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+        </div>
+      </div>
+    </div>
+  );
+
   const filteredStudents = students.filter(student => {
     const matchesSearch = getFullName(student).toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,12 +223,84 @@ export default function StudentsPage() {
       <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <Navbar />
         <main className="pt-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-8"></div>
-              <p className="text-lg text-gray-600">Loading our amazing students...</p>
+          {/* Hero Section Skeleton */}
+          <section className="relative py-20 bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: `radial-gradient(circle at 25px 25px, white 2px, transparent 0), radial-gradient(circle at 75px 75px, white 2px, transparent 0)`,
+                backgroundSize: '100px 100px'
+              }}></div>
             </div>
-          </div>
+            
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="text-center max-w-4xl mx-auto">
+                <div className="h-16 bg-white/20 rounded-lg w-80 mx-auto mb-6 animate-pulse relative overflow-hidden">
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                </div>
+                <div className="w-32 h-1 bg-white/30 mx-auto mb-8 rounded animate-pulse"></div>
+                <div className="space-y-4">
+                  <div className="h-6 bg-white/20 rounded w-3/4 mx-auto animate-pulse relative overflow-hidden">
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                  </div>
+                  <div className="h-6 bg-white/20 rounded w-2/3 mx-auto animate-pulse relative overflow-hidden">
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                  </div>
+                </div>
+                <div className="mt-6 space-y-2">
+                  <div className="h-4 bg-white/15 rounded w-1/2 mx-auto animate-pulse relative overflow-hidden">
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                  </div>
+                  <div className="h-4 bg-white/15 rounded w-3/5 mx-auto animate-pulse relative overflow-hidden">
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Decorative Elements */}
+            <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute bottom-10 right-10 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute top-1/2 right-20 w-16 h-16 bg-indigo-400/30 rounded-full blur-xl animate-pulse"></div>
+          </section>
+
+          {/* Statistics Section Skeleton */}
+          <section className="py-16 bg-white/70 backdrop-blur-sm">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <StatsSkeletonCard />
+                <StatsSkeletonCard />
+                <StatsSkeletonCard />
+                <StatsSkeletonCard />
+              </div>
+            </div>
+          </section>
+
+          {/* Search and Filter Section Skeleton */}
+          <section className="py-8 bg-gradient-to-r from-gray-50 to-blue-50">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <div className="relative flex-1 max-w-md">
+                  <div className="h-12 bg-white/60 backdrop-blur-sm border border-white/20 rounded-xl animate-pulse relative overflow-hidden">
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+                  </div>
+                </div>
+                <div className="h-12 w-40 bg-white/60 backdrop-blur-sm border border-white/20 rounded-xl animate-pulse relative overflow-hidden">
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Students Grid Skeleton */}
+          <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <SkeletonCard key={index} />
+                ))}
+              </div>
+            </div>
+          </section>
         </main>
         <Footer />
       </div>

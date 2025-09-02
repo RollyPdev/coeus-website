@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg)"/>
+  <circle cx="100" cy="70" r="25" fill="white" opacity="0.9"/>
+  <path d="M100 120 C80 120, 60 130, 60 140 L60 180 L140 180 L140 140 C140 130, 120 120, 100 120" fill="white" opacity="0.9"/>
+  <circle cx="85" cy="50" r="3" fill="white" opacity="0.7"/>
+  <circle cx="115" cy="50" r="3" fill="white" opacity="0.7"/>
+  <text x="100" y="195" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" opacity="0.8">LECTURER</text>
+</svg>

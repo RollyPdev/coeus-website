@@ -21,8 +21,17 @@ export async function GET(
       );
     }
 
+    // If student has uploaded photo, return it as base64 data URL
+    if (student.photo) {
+      return NextResponse.json({
+        photo: student.photo,
+        photoUrl: student.photo // Use uploaded photo as photoUrl
+      });
+    }
+
+    // Otherwise return placeholder
     return NextResponse.json({
-      photo: student.photo,
+      photo: null,
       photoUrl: student.photoUrl
     });
   } catch (error) {

@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     const requiredFields = [
       "name",
-      "photo",
       "position",
       "credentials",
       "bio",
@@ -55,6 +54,11 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    // Set default photo if none provided
+    if (!data.photo) {
+      data.photo = '/default-lecturer.svg';
     }
 
     const lecturer = await prisma.lecturer.create({

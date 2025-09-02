@@ -52,7 +52,6 @@ export async function PUT(
     // Validate required fields
     const requiredFields = [
       "name",
-      "photo",
       "position",
       "credentials",
       "bio",
