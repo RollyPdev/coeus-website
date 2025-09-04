@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             studentId: true,
-            photoUrl: true
+            photoUrl: true,
+            schoolName: true
           }
         }
       },
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
               firstName: true,
               lastName: true,
               studentId: true,
-              photoUrl: true
+              photoUrl: true,
+              schoolName: true
             }
           }
         }
@@ -111,7 +113,8 @@ export async function POST(request: NextRequest) {
               firstName: true,
               lastName: true,
               studentId: true,
-              photoUrl: true
+              photoUrl: true,
+              schoolName: true
             }
           }
         }
@@ -152,7 +155,8 @@ export async function PUT(request: NextRequest) {
             firstName: true,
             lastName: true,
             studentId: true,
-            photoUrl: true
+            photoUrl: true,
+            schoolName: true
           }
         }
       }
