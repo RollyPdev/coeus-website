@@ -198,8 +198,8 @@ export default function AttendanceDisplayPage() {
                           if (fallback) fallback.style.display = 'flex';
                         }}
                       />
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold hidden">
-                        {record.student.firstName[0]}{record.student.lastName[0]}
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold hidden">
+                        {record.student.firstName[0]?.toUpperCase()}{record.student.lastName[0]?.toUpperCase()}
                       </div>
                     </div>
                     <div className="flex-1">
@@ -237,6 +237,7 @@ export default function AttendanceDisplayPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Student</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">School</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Student ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Time</th>
@@ -275,8 +276,8 @@ export default function AttendanceDisplayPage() {
                                 if (fallback) fallback.style.display = 'flex';
                               }}
                             />
-                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold text-sm hidden">
-                              {record.student.firstName[0]}{record.student.lastName[0]}
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm hidden">
+                              {record.student.firstName[0]?.toUpperCase()}{record.student.lastName[0]?.toUpperCase()}
                             </div>
                           </div>
                           <div>
