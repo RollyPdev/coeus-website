@@ -8,6 +8,7 @@ interface Student {
   firstName: string;
   lastName: string;
   photoUrl?: string;
+  schoolName?: string;
 }
 
 interface AttendanceRecord {
@@ -187,17 +188,19 @@ export default function AttendanceDisplayPage() {
                 >
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
-                      {record.student.photoUrl ? (
-                        <img 
-                          src={record.student.photoUrl} 
-                          alt={`${record.student.firstName} ${record.student.lastName}`}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold">
-                          {record.student.firstName[0]}{record.student.lastName[0]}
-                        </div>
-                      )}
+                      <img 
+                        src={`/api/admin/students/${record.student.id}/photo?t=${Date.now()}`} 
+                        alt={`${record.student.firstName} ${record.student.lastName}`}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold hidden">
+                        {record.student.firstName[0]}{record.student.lastName[0]}
+                      </div>
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">
@@ -242,7 +245,7 @@ export default function AttendanceDisplayPage() {
               <tbody className="divide-y divide-gray-200">
                 {attendanceRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                           <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -262,23 +265,30 @@ export default function AttendanceDisplayPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0">
-                            {record.student.photoUrl ? (
-                              <img 
-                                src={record.student.photoUrl} 
-                                alt={`${record.student.firstName} ${record.student.lastName}`}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold text-sm">
-                                {record.student.firstName[0]}{record.student.lastName[0]}
-                              </div>
-                            )}
+                            <img 
+                              src={`/api/admin/students/${record.student.id}/photo?t=${Date.now()}`} 
+                              alt={`${record.student.firstName} ${record.student.lastName}`}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold text-sm hidden">
+                              {record.student.firstName[0]}{record.student.lastName[0]}
+                            </div>
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
                               {record.student.firstName} {record.student.lastName}
                             </p>
                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 max-w-xs truncate" title={record.student.schoolName || 'N/A'}>
+                          {record.student.schoolName || 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
