@@ -20,9 +20,19 @@ export async function GET(request: NextRequest) {
     else if (school.includes('hercor college')) {
       logoUrl = 'https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/l2jKhAf1ncxayoDfVTUh/media/686c1c4d499f7465d6a356e6.svg';
     }
-    // Northern Iloilo State University
-    else if (school.includes('northern iloilo state university')) {
-      logoUrl = 'https://www.facebook.com/photo/?fbid=121827857283724&set=a.121827853950391';
+    // Northern Iloilo State University (all campuses)
+    else if (school.includes('northern iloilo state university') || 
+             school.includes('nisu') ||
+             school.includes('northern iloilo') ||
+             school.includes('nisu - estancia') ||
+             school.includes('nisu - ajuy') ||
+             school.includes('nisu - batad') ||
+             school.includes('nisu - concepcion') ||
+             school.includes('nisu - lemery') ||
+             school.includes('nisu - san dionisio') ||
+             school.includes('nisu - sara') ||
+             school.includes('nisu - balasan')) {
+      logoUrl = 'https://nisu.pinnacle.com.ph/ajuy/images/NISU_Logo.jpg';
     }
     
     if (logoUrl) {
