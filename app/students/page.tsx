@@ -30,6 +30,7 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [studentPhotos, setStudentPhotos] = useState<{[key: string]: string}>({});
+  const [schoolLogos, setSchoolLogos] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     fetchStudents();
@@ -65,9 +66,12 @@ export default function StudentsPage() {
         );
         setStudents(activeStudents);
         
-        // Fetch photos for each student
+        // Fetch photos and school logos for each student
         activeStudents.forEach((student: Student) => {
           fetchStudentPhoto(student.id);
+          if (student.schoolName) {
+            fetchSchoolLogo(student.schoolName);
+          }
         });
       } else {
         throw new Error(data.error || 'Failed to fetch students');
@@ -97,6 +101,21 @@ export default function StudentsPage() {
     }
     
     return '/default-student.svg';
+  };
+
+  const fetchSchoolLogo = async (schoolName: string) => {
+    if (!schoolName || schoolLogos[schoolName]) return;
+    
+    try {
+      const response = await fetch(`/api/schools/logo?school=${encodeURIComponent(schoolName)}`);
+      const data = await response.json();
+      
+      if (data.logoUrl) {
+        setSchoolLogos(prev => ({ ...prev, [schoolName]: data.logoUrl }));
+      }
+    } catch (error) {
+      console.error('Error fetching school logo:', error);
+    }
   };
 
   // Facebook-style skeleton loading component
@@ -216,7 +235,7 @@ export default function StudentsPage() {
     const matchesFilter = filterStatus === 'all' || student.status === filterStatus;
     
     return matchesSearch && matchesFilter;
-  });
+  }).sort((a, b) => a.lastName.localeCompare(b.lastName));
 
   if (loading) {
     return (
@@ -441,7 +460,7 @@ export default function StudentsPage() {
                 {filteredStudents.map((student) => (
                   <div 
                     key={student.id} 
-                    className="group bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20"
+                    className="group bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-3 hover:scale-105 border border-white/30 hover:border-blue-200/50"
                   >
                     {/* Student Photo */}
                     <div className="relative h-64 overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100">
@@ -464,55 +483,75 @@ export default function StudentsPage() {
                         {student.status === 'graduated' ? 'Graduate' : 'Active'}
                       </div>
                       
+                      {/* School Logo - Top Left */}
+                      {student.schoolName && schoolLogos[student.schoolName] && (
+                        <div className="absolute top-3 left-3 w-8 h-8 bg-white rounded-full p-1 shadow-lg">
+                          <img 
+                            src={schoolLogos[student.schoolName]} 
+                            alt="School Logo"
+                            className="w-full h-full object-contain rounded-full"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Verification Badge - Bottom Left */}
+                      {student.status === 'active' && (
+                        <div className="absolute bottom-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center shadow-lg">
+                          <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Official Reviewee
+                        </div>
+                      )}
+                      
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
                     
                     {/* Student Information */}
                     <div className="p-6">
-                      <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                      <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-blue-600 transition-colors duration-300 uppercase text-center">
                         {getFullName(student)}
                       </h3>
                       
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <svg className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                          </svg>
-                          <span className="font-medium text-gray-500">ID:</span>
-                          <span className="ml-1 font-mono">{student.studentId}</span>
-                        </div>
+                      <div className="space-y-3 text-sm text-gray-600">
                         
                         {student.schoolName && (
-                          <div className="flex items-start">
-                            <svg className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h4M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
+                          <div className="flex items-start bg-green-50 rounded-lg p-2 border border-green-100">
+                            <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h4M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            </div>
                             <div>
-                              <span className="font-medium text-gray-500">School:</span>
-                              <div className="text-gray-700 leading-tight">{student.schoolName}</div>
+                              <span className="font-medium text-green-700">School:</span>
+                              <div className="text-green-800 font-medium leading-tight mt-1 text-center">{student.schoolName}</div>
                             </div>
                           </div>
                         )}
                         
                         {student.yearGraduated && (
-                          <div className="flex items-center">
-                            <svg className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="flex items-center bg-indigo-50 rounded-lg p-2 border border-indigo-100">
+                            <svg className="h-4 w-4 text-indigo-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span className="font-medium text-gray-500">Graduated:</span>
-                            <span className="ml-1">{student.yearGraduated}</span>
+                            <span className="font-medium text-indigo-700">Graduated:</span>
+                            <span className="ml-2 text-indigo-800 font-semibold">{student.yearGraduated}</span>
                           </div>
                         )}
                         
                         {student.course && (
-                          <div className="flex items-start">
-                            <svg className="h-4 w-4 text-purple-500 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          <div className="flex items-start bg-purple-50 rounded-lg p-2 border border-purple-100">
+                            <svg className="h-4 w-4 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253" />
                             </svg>
                             <div>
-                              <span className="font-medium text-gray-500">Course:</span>
-                              <div className="text-gray-700 leading-tight">{student.course}</div>
+                              <span className="font-medium text-purple-700">Course:</span>
+                              <div className="text-purple-800 font-medium leading-tight mt-1 text-center">{student.course}</div>
                             </div>
                           </div>
                         )}
@@ -522,11 +561,11 @@ export default function StudentsPage() {
                       {student.enrollments && student.enrollments.length > 0 && (
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="text-xs font-medium text-gray-500 mb-2">Programs:</div>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-2">
                             {student.enrollments.slice(0, 2).map((enrollment, index) => (
                               <span 
                                 key={index}
-                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                                className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium border border-blue-200"
                               >
                                 {enrollment.reviewType.length > 20 
                                   ? enrollment.reviewType.substring(0, 20) + '...' 
@@ -535,7 +574,7 @@ export default function StudentsPage() {
                               </span>
                             ))}
                             {student.enrollments.length > 2 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium border border-gray-200">
                                 +{student.enrollments.length - 2} more
                               </span>
                             )}

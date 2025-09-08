@@ -12,9 +12,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
-    "db:reset": "node reset-database.js",
+    "db:reset": "node scripts/safe-db-reset.js",
+    "db:reset:force": "node scripts/safe-db-reset.js --force",
     "db:apply-schema": "node apply-schema.js",
     "db:setup": "node setup-database.js",
+    "db:backup": "node scripts/create-backup.js",
     "db:add-photo": "node add-photo-field.js",
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "submit-sitemap": "node scripts/submit-sitemap.js"

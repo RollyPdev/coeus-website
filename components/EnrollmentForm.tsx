@@ -367,6 +367,42 @@ const EnrollmentForm = () => {
   };
 
 
+  // Function to check for duplicate student
+  const checkDuplicateStudent = async (field: 'email' | 'contactNumber', value: string) => {
+    if (!value || value.length < 3) {
+      setDuplicateWarning({type: null, message: ''});
+      return;
+    }
+    
+    setCheckingDuplicate(true);
+    try {
+      const response = await fetch('/api/students/check-duplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ field, value }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.exists) {
+        setDuplicateWarning({
+          type: field === 'email' ? 'email' : 'contact',
+          message: `A student with this ${field === 'email' ? 'email address' : 'contact number'} is already registered. Student ID: ${result.studentId}`
+        });
+      } else {
+        setDuplicateWarning({type: null, message: ''});
+      }
+    } catch (error) {
+      console.error('Error checking duplicate:', error);
+      // Don't show error to user, just clear warning
+      setDuplicateWarning({type: null, message: ''});
+    } finally {
+      setCheckingDuplicate(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
@@ -375,6 +411,18 @@ const EnrollmentForm = () => {
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
       let updates: Partial<FormData> = { [name]: value };
+      
+      // Check for duplicates on email and contact number changes
+      if (name === 'email' && value.includes('@')) {
+        // Debounce the duplicate check
+        setTimeout(() => checkDuplicateStudent('email', value), 500);
+      } else if (name === 'contactNumber' && value.length >= 10) {
+        // Debounce the duplicate check
+        setTimeout(() => checkDuplicateStudent('contactNumber', value), 500);
+      } else if (name === 'email' || name === 'contactNumber') {
+        // Clear warning if field is being cleared
+        setDuplicateWarning({type: null, message: ''});
+      }
       
       // Update course based on reviewType
       if (name === 'reviewType') {
@@ -568,6 +616,10 @@ const EnrollmentForm = () => {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateStudentInfo, setDuplicateStudentInfo] = useState<any>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<{type: 'email' | 'contact' | null, message: string}>({type: null, message: ''});
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -576,6 +628,13 @@ const EnrollmentForm = () => {
     // Final validation
     if (!formData.agreeToTerms) {
       alert('Please agree to the Terms and Conditions before submitting.');
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Check for duplicate warnings
+    if (duplicateWarning.type) {
+      alert('Please resolve the duplicate registration warning before submitting.');
       setIsSubmitting(false);
       return;
     }
@@ -612,6 +671,10 @@ const EnrollmentForm = () => {
         
         // Show success modal
         setShowSuccessModal(true);
+      } else if (result.isDuplicate) {
+        // Handle duplicate student case
+        setDuplicateStudentInfo(result.existingStudent);
+        setShowDuplicateModal(true);
       } else {
         console.error('API Error:', result);
         alert(`Failed to submit enrollment: ${result.message || 'Unknown error'}. Please try again.`);
@@ -1307,30 +1370,70 @@ const EnrollmentForm = () => {
                 <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">
                   Contact Number
                 </label>
-                <input
-                  type="tel"
-                  id="contactNumber"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="tel"
+                    id="contactNumber"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-blue-500 transition-colors pr-10 ${
+                      duplicateWarning.type === 'contact' ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    required
+                  />
+                  {checkingDuplicate && formData.contactNumber && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <svg className="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {duplicateWarning.type === 'contact' && (
+                  <div className="mt-1 flex items-center text-sm text-red-600">
+                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    {duplicateWarning.message}
+                  </div>
+                )}
               </div>
               
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address
                 </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-blue-500 transition-colors pr-10 ${
+                      duplicateWarning.type === 'email' ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    required
+                  />
+                  {checkingDuplicate && formData.email && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <svg className="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {duplicateWarning.type === 'email' && (
+                  <div className="mt-1 flex items-center text-sm text-red-600">
+                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    {duplicateWarning.message}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -1908,8 +2011,8 @@ const EnrollmentForm = () => {
               </button>
               <button
                 type="submit"
-                disabled={!formData.agreeToTerms || isSubmitting}
-                className={`px-6 py-3 ${formData.agreeToTerms && !isSubmitting ? 'bg-blue-700 hover:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'} text-white font-medium rounded-lg transition-colors flex items-center justify-center`}
+                disabled={!formData.agreeToTerms || isSubmitting || duplicateWarning.type !== null}
+                className={`px-6 py-3 ${formData.agreeToTerms && !isSubmitting && !duplicateWarning.type ? 'bg-blue-700 hover:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'} text-white font-medium rounded-lg transition-colors flex items-center justify-center`}
               >
                 {isSubmitting && (
                   <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1917,7 +2020,7 @@ const EnrollmentForm = () => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
                 )}
-                {isSubmitting ? 'Enrolling...' : 'Enroll Now'}
+                {isSubmitting ? 'Enrolling...' : duplicateWarning.type ? 'Resolve Duplicate Warning' : 'Enroll Now'}
               </button>
             </div>
           </div>
@@ -1962,6 +2065,131 @@ const EnrollmentForm = () => {
                   className={`px-4 py-2 ${newSchoolName.trim() ? 'bg-blue-700 hover:bg-blue-800' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-lg transition-colors`}
                 >
                   Add School
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Student Warning Modal */}
+      {showDuplicateModal && duplicateStudentInfo && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl overflow-hidden shadow-xl max-w-lg w-full mx-4">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white">
+              <div className="flex items-center">
+                <div className="bg-white rounded-full h-12 w-12 flex items-center justify-center mr-4">
+                  <svg className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold">Already Registered!</h3>
+                  <p className="text-amber-100 text-sm">Student record found in our system</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start">
+                    <svg className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-amber-800">
+                      <p className="font-semibold mb-2">You are already successfully registered!</p>
+                      <p className="text-sm mb-3">We found an existing student record that matches your information. Please contact the administrator for assistance with your enrollment status.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Your Existing Registration Details:</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Student ID</p>
+                      <p className="font-semibold text-blue-700">{duplicateStudentInfo.studentId}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Name</p>
+                      <p className="font-semibold">{duplicateStudentInfo.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Email</p>
+                      <p className="font-semibold">{duplicateStudentInfo.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Contact</p>
+                      <p className="font-semibold">{duplicateStudentInfo.contactNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Status</p>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        duplicateStudentInfo.status === 'active' ? 'bg-green-100 text-green-800' :
+                        duplicateStudentInfo.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {duplicateStudentInfo.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Registration Date</p>
+                      <p className="font-semibold">{new Date(duplicateStudentInfo.registrationDate).toLocaleDateString()}</p>
+                    </div>
+                    {duplicateStudentInfo.enrollmentId && (
+                      <>
+                        <div>
+                          <p className="text-gray-500">Enrollment ID</p>
+                          <p className="font-semibold text-blue-700">{duplicateStudentInfo.enrollmentId}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Program</p>
+                          <p className="font-semibold">{duplicateStudentInfo.reviewType}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                  <div className="flex items-start">
+                    <svg className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <div className="text-blue-800">
+                      <p className="font-semibold mb-1">Need Help?</p>
+                      <p className="text-sm">Contact our administrator for assistance:</p>
+                      <ul className="text-sm mt-2 space-y-1">
+                        <li>• Phone: (036) 621-0000</li>
+                        <li>• Email: info@coeusreview.com</li>
+                        <li>• Visit: Coeus Review Center, Roxas City, Capiz</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={() => {
+                    setShowDuplicateModal(false);
+                    setDuplicateStudentInfo(null);
+                  }}
+                  className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  I Understand
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDuplicateModal(false);
+                    setDuplicateStudentInfo(null);
+                    // Reset form to allow user to try with different information
+                    setCurrentStep(1);
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Try Different Information
                 </button>
               </div>
             </div>

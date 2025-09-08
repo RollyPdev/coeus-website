@@ -400,3 +400,4 @@ export default function PublicAttendancePage() {
     </div>
   );
 }
+}

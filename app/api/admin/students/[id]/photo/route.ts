@@ -64,10 +64,8 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(
-      { error: 'No photo found' },
-      { status: 404 }
-    );
+    // Return default student avatar when no photo is found
+    return NextResponse.redirect(new URL('/default-student.svg', request.url));
   } catch (error) {
     console.error('Error fetching student photo:', error);
     return NextResponse.json(

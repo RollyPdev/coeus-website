@@ -148,6 +148,30 @@ export default function AttendancePage() {
     }
   };
 
+  const handleMarkAllStudents = async (status: AttendanceRecord['status']) => {
+    try {
+      const response = await fetch('/api/admin/attendance/bulk', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          date: selectedDate, 
+          status,
+          remarks: `Bulk marked as ${status}` 
+        })
+      });
+      
+      if (response.ok) {
+        toast.success(`All students marked as ${status}`);
+        fetchAttendance();
+      } else {
+        toast.error('Failed to mark all students');
+      }
+    } catch (error) {
+      console.error('Error marking all students:', error);
+      toast.error('Failed to mark all students');
+    }
+  };
+
   const filteredStudents = students.filter(student => 
     student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -155,36 +179,36 @@ export default function AttendancePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
-            <p className="mt-2 text-sm text-gray-600">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Attendance Management</h1>
+            <p className="mt-3 text-base text-gray-700 font-medium">
               Track and manage student attendance for {new Date(selectedDate).toLocaleDateString('en-US', { 
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
               })} - {session === 'morning' ? 'Morning' : 'Afternoon'} Session
             </p>
           </div>
-          <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3">
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
             />
             <select
               value={session}
               onChange={(e) => setSession(e.target.value as 'morning' | 'afternoon')}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
             >
               <option value="morning">Morning Session</option>
               <option value="afternoon">Afternoon Session</option>
             </select>
             <button 
               onClick={() => setShowTimeSettings(!showTimeSettings)}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+              className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-3 rounded-xl flex items-center transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -193,12 +217,21 @@ export default function AttendancePage() {
             </button>
             <button 
               onClick={() => setShowBulkActions(!showBulkActions)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl flex items-center transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
               </svg>
               Bulk Actions
+            </button>
+            <button 
+              onClick={() => handleMarkAllStudents('present')}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl flex items-center transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Mark All Present
             </button>
           </div>
         </div>
@@ -282,66 +315,66 @@ export default function AttendancePage() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Present</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.present}</p>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Present</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.present}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Absent</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.absent}</p>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Absent</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.absent}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Late</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.late}</p>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Late</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.late}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Excused</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.excused}</p>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Excused</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.excused}</p>
             </div>
           </div>
         </div>
@@ -403,7 +436,7 @@ export default function AttendancePage() {
       )}
 
       {/* Main Attendance Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -440,7 +473,7 @@ export default function AttendancePage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.length === 0 ? (
+                {students.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       <div className="flex flex-col items-center">
@@ -448,6 +481,18 @@ export default function AttendancePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                         <p className="text-lg font-medium text-gray-900 mb-1">No students found</p>
+                        <p className="text-gray-500">No active students in the system</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <p className="text-lg font-medium text-gray-900 mb-1">No students match your search</p>
                         <p className="text-gray-500">Try adjusting your search criteria</p>
                       </div>
                     </td>
@@ -477,20 +522,15 @@ export default function AttendancePage() {
                           {student.studentId}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {attendance ? (
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              attendance.status === 'present' ? 'bg-green-100 text-green-800' :
-                              attendance.status === 'absent' ? 'bg-red-100 text-red-800' :
-                              attendance.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
-                              {attendance.status.charAt(0).toUpperCase() + attendance.status.slice(1)}
-                            </span>
-                          ) : (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                              Not Marked
-                            </span>
-                          )}
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            attendance?.status === 'present' ? 'bg-green-100 text-green-800' :
+                            attendance?.status === 'absent' ? 'bg-red-100 text-red-800' :
+                            attendance?.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
+                            attendance?.status === 'excused' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {attendance?.status ? attendance.status.charAt(0).toUpperCase() + attendance.status.slice(1) : 'Absent'}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {attendance ? new Date(attendance.createdAt).toLocaleTimeString() : '-'}

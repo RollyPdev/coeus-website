@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const studentId = searchParams.get('studentId');
     
+    if (date && !studentId) {
+      // Ensure all active students have attendance records for the specified date
+      await ensureAttendanceRecordsForDate(date);
+    }
+    
     const whereClause: any = {};
     
     if (date) {
@@ -53,6 +58,58 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Helper function to ensure all active students have attendance records for a specific date
+async function ensureAttendanceRecordsForDate(dateString: string) {
+  const targetDate = new Date(dateString);
+  const startDate = new Date(targetDate);
+  const endDate = new Date(targetDate);
+  endDate.setDate(endDate.getDate() + 1);
+
+  // Get all active students
+  const activeStudents = await prisma.student.findMany({
+    where: {
+      status: 'active'
+    },
+    select: {
+      id: true
+    }
+  });
+
+  // Get existing attendance records for this date
+  const existingAttendance = await prisma.attendance.findMany({
+    where: {
+      date: {
+        gte: startDate,
+        lt: endDate
+      }
+    },
+    select: {
+      studentId: true
+    }
+  });
+
+  const existingStudentIds = new Set(existingAttendance.map(a => a.studentId));
+  
+  // Find students without attendance records for this date
+  const studentsWithoutRecords = activeStudents.filter(
+    student => !existingStudentIds.has(student.id)
+  );
+
+  // Create attendance records for students without records (default to 'absent')
+  if (studentsWithoutRecords.length > 0) {
+    const attendanceRecords = studentsWithoutRecords.map(student => ({
+      studentId: student.id,
+      date: targetDate,
+      status: 'absent',
+      remarks: 'Auto-generated record'
+    }));
+
+    await prisma.attendance.createMany({
+      data: attendanceRecords
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { studentId, date, status, remarks } = await request.json();
@@ -64,7 +121,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if attendance already exists for this student, date, and session
+    // Ensure all students have records for this date first
+    await ensureAttendanceRecordsForDate(date);
+
+    // Check if attendance already exists for this student and date
     const existingAttendance = await prisma.attendance.findFirst({
       where: {
         studentId,
@@ -82,7 +142,7 @@ export async function POST(request: NextRequest) {
         where: { id: existingAttendance.id },
         data: {
           status,
-          remarks: remarks || null
+          remarks: status === 'absent' && remarks === 'Auto-generated record' ? null : (remarks || null)
         },
         include: {
           student: {
@@ -98,7 +158,7 @@ export async function POST(request: NextRequest) {
         }
       });
     } else {
-      // Create new attendance record
+      // Create new attendance record (this should rarely happen now)
       attendance = await prisma.attendance.create({
         data: {
           studentId,
@@ -146,7 +206,7 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: {
         status,
-        remarks: remarks || null
+        remarks: status === 'absent' && remarks === 'Auto-generated record' ? null : (remarks || null)
       },
       include: {
         student: {
