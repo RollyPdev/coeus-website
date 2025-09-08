@@ -100,6 +100,11 @@ export default function StudentsPage() {
       return student.photoUrl;
     }
     
+    // If no photo, try to use school logo
+    if (student.schoolName && schoolLogos[student.schoolName]) {
+      return schoolLogos[student.schoolName];
+    }
+    
     return '/default-student.svg';
   };
 
