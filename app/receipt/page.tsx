@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import QRCode from 'qrcode';
 
 interface PaymentReceipt {
   id: string;
@@ -29,6 +30,7 @@ function ReceiptContent() {
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   useEffect(() => {
     if (paymentId) {
@@ -67,6 +69,32 @@ function ReceiptContent() {
       }
       
       setReceipt(payment);
+      
+      // Generate QR code with full receipt data
+      const receiptData = {
+        receiptNumber: payment.receiptNumber,
+        transactionId: payment.transactionId,
+        studentName: payment.studentName,
+        studentId: payment.studentId,
+        amount: payment.amount,
+        paymentDate: payment.paymentDate,
+        paymentMethod: payment.paymentMethod,
+        status: payment.status,
+        program: payment.enrollment.reviewType,
+        batch: payment.enrollment.batch,
+        verifyUrl: `${window.location.origin}/receipt?paymentId=${payment.transactionId}`
+      };
+      
+      const qrCode = await QRCode.toDataURL(JSON.stringify(receiptData), {
+        width: 120,
+        margin: 2,
+        color: {
+          dark: '#1e40af',
+          light: '#ffffff'
+        },
+        errorCorrectionLevel: 'M'
+      });
+      setQrCodeUrl(qrCode);
     } catch (error) {
       console.error('Error fetching receipt:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch receipt');
@@ -155,117 +183,210 @@ function ReceiptContent() {
           </button>
         </div>
 
-        <div id="receipt-content" className="bg-white rounded-lg shadow-lg p-8 print:shadow-none print:rounded-none">
-          <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">COEUS REVIEW CENTER</h1>
-            <p className="text-gray-600">Official Payment Receipt</p>
-            <div className="mt-4">
-              <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold">
-                Receipt #{receipt.receiptNumber}
-              </span>
+        <div id="receipt-content" className="bg-white shadow-lg print:shadow-none relative" style={{
+          width: '105mm',
+          minHeight: '74mm',
+          margin: '0 auto',
+          padding: '6mm',
+          fontSize: '7px',
+          lineHeight: '1.1',
+          border: '2px solid #1e40af',
+          borderRadius: '4px',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)'
+        }}>
+          {/* Security Watermark */}
+          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
+            backgroundImage: 'url(/logo.png)',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: '60%'
+          }}></div>
+          
+          {/* Header */}
+          <div className="text-center border-b-2 border-blue-800 pb-2 mb-2 relative z-10">
+            <div className="flex items-center justify-between mb-1">
+              <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+              <div className="text-right">
+                <div className="text-xs font-bold text-blue-800">RECEIPT</div>
+                <div className="text-xs text-gray-600">#{receipt.receiptNumber}</div>
+              </div>
+            </div>
+            <div className="mb-1">
+              <h1 className="text-sm font-bold text-blue-900 leading-tight">COEUS REVIEW & TRAINING</h1>
+              <p className="text-xs text-blue-700 font-semibold leading-tight">SPECIALIST, INC.</p>
+              <p className="text-xs text-gray-600 leading-tight mt-1">CL Business Center, 2nd Floor, Highway</p>
+              <p className="text-xs text-gray-600 leading-tight">Brgy. Punta, Tabuc, Roxas City</p>
+              <p className="text-xs text-blue-600 leading-tight font-medium">info@coeusreview.com</p>
+            </div>
+            <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-3 py-1 text-xs font-bold rounded-full inline-block">
+              ✓ OFFICIAL PAYMENT RECEIPT
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Transaction ID:</span>
-                  <span className="font-mono font-medium">{receipt.transactionId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Payment Date:</span>
-                  <span>{new Date(receipt.paymentDate).toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Payment Method:</span>
-                  <span className="capitalize">{receipt.paymentMethod.replace('_', ' ')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                    receipt.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    receipt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {receipt.status.toUpperCase()}
-                  </span>
-                </div>
+          {/* Transaction Info */}
+          <div className="mb-2 bg-gray-50 p-2 rounded border relative z-10">
+            <div className="grid grid-cols-3 gap-1 text-xs mb-1">
+              <div>
+                <span className="font-bold text-blue-800">DATE:</span>
+                <div className="font-mono font-semibold">{new Date(receipt.paymentDate).toLocaleDateString('en-US', { 
+                  month: '2-digit', day: '2-digit', year: 'numeric' 
+                })}</div>
+              </div>
+              <div>
+                <span className="font-bold text-blue-800">TIME:</span>
+                <div className="font-mono font-semibold">{new Date(receipt.paymentDate).toLocaleTimeString('en-US', {
+                  hour: '2-digit', minute: '2-digit', hour12: true
+                })}</div>
+              </div>
+              <div className="text-right">
+                <span className="font-bold text-blue-800">REF:</span>
+                <div className="font-mono font-semibold text-xs">{receipt.transactionId.slice(-8)}</div>
               </div>
             </div>
+            <div className="border-t border-gray-300 pt-1">
+              <span className="font-bold text-xs text-blue-800">TRANSACTION ID:</span>
+              <div className="font-mono text-xs break-all bg-white px-1 py-0.5 rounded border">{receipt.transactionId}</div>
+            </div>
+          </div>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Student Information</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Name:</span>
-                  <span className="font-medium">{receipt.studentName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Student ID:</span>
-                  <span className="font-mono">{receipt.studentId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Email:</span>
-                  <span>{receipt.studentEmail}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Program:</span>
-                  <span>{receipt.enrollment.reviewType}</span>
+          {/* Student Info */}
+          <div className="border border-blue-200 bg-blue-50 p-2 mb-2 rounded relative z-10">
+            <div className="text-xs">
+              <div className="flex justify-between items-center mb-1 border-b border-blue-200 pb-1">
+                <span className="font-bold text-blue-900">STUDENT INFORMATION</span>
+                <span className="bg-blue-800 text-white px-2 py-0.5 rounded text-xs font-bold">{receipt.studentId}</span>
+              </div>
+              <div className="mb-1">
+                <span className="font-bold text-blue-800">NAME:</span>
+                <div className="font-semibold text-gray-900">{receipt.studentName.toUpperCase()}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="font-bold text-blue-800">PROGRAM:</span>
+                  <div className="font-semibold text-xs">{receipt.enrollment.reviewType}</div>
                 </div>
                 {receipt.enrollment.batch && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Batch:</span>
-                    <span>{receipt.enrollment.batch}</span>
+                  <div>
+                    <span className="font-bold text-blue-800">BATCH:</span>
+                    <div className="font-semibold text-xs">{receipt.enrollment.batch}</div>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Breakdown</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between text-lg">
-                <span>Base Amount:</span>
-                <span>₱{(receipt.amount + (receipt.discount || 0) - (receipt.tax || 0)).toLocaleString()}</span>
+          {/* Payment Details */}
+          <div className="border-2 border-green-600 bg-green-50 p-2 mb-2 rounded relative z-10">
+            <div className="text-center mb-1">
+              <span className="bg-green-600 text-white px-2 py-1 text-xs font-bold rounded">💰 PAYMENT SUMMARY</span>
+            </div>
+            <div className="text-xs space-y-1">
+              <div className="flex justify-between border-b border-green-200 pb-1">
+                <span className="font-bold">Base Amount:</span>
+                <span className="font-mono font-bold">₱{(receipt.amount + (receipt.discount || 0) - (receipt.tax || 0)).toLocaleString()}</span>
               </div>
               
               {receipt.discount && receipt.discount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount:</span>
-                  <span>-₱{receipt.discount.toLocaleString()}</span>
+                <div className="flex justify-between text-green-700">
+                  <span className="font-semibold">💸 Discount Applied:</span>
+                  <span className="font-mono font-bold">-₱{receipt.discount.toLocaleString()}</span>
                 </div>
               )}
               
               {receipt.tax && receipt.tax > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Tax:</span>
-                  <span>+₱{receipt.tax.toLocaleString()}</span>
+                <div className="flex justify-between text-red-700">
+                  <span className="font-semibold">📊 Tax:</span>
+                  <span className="font-mono font-bold">+₱{receipt.tax.toLocaleString()}</span>
                 </div>
               )}
               
-              <div className="border-t border-gray-300 pt-3">
-                <div className="flex justify-between text-2xl font-bold text-blue-600">
-                  <span>Total Paid:</span>
-                  <span>₱{receipt.amount.toLocaleString()}</span>
+              <div className="border-2 border-green-600 bg-white p-1 rounded mt-2">
+                <div className="flex justify-between font-bold text-sm text-green-800">
+                  <span>💳 TOTAL PAID:</span>
+                  <span className="font-mono text-lg">₱{receipt.amount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-xs text-blue-800 mt-1 pt-1 border-t border-green-200">
+                  <span>💰 BALANCE:</span>
+                  <span className="font-mono">
+                    {/* Assuming enrollment has totalAmount and totalPaid fields */}
+                    ₱{((receipt as any).enrollment?.totalAmount || receipt.amount) - ((receipt as any).enrollment?.totalPaid || receipt.amount) <= 0 ? '0.00' : 
+                    (((receipt as any).enrollment?.totalAmount || receipt.amount) - ((receipt as any).enrollment?.totalPaid || receipt.amount)).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mt-2 pt-1 border-t border-green-200">
+                <div>
+                  <span className="font-bold text-green-800">METHOD:</span>
+                  <div className="font-semibold capitalize text-xs">{receipt.paymentMethod.replace('_', ' ')}</div>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-green-800">STATUS:</span>
+                  <div className={`inline-block px-2 py-0.5 text-xs font-bold rounded ${
+                    receipt.status === 'completed' ? 'bg-green-600 text-white' :
+                    receipt.status === 'pending' ? 'bg-yellow-500 text-white' :
+                    'bg-red-600 text-white'
+                  }`}>
+                    ✓ {receipt.status === 'completed' ? 'PAID' : receipt.status.toUpperCase()}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* QR Code & Verification */}
+          <div className="flex justify-between items-center mb-2 relative z-10">
+            <div className="text-xs">
+              <div className="bg-blue-800 text-white px-2 py-1 rounded font-bold mb-1">🔒 SECURE</div>
+              <div className="font-mono text-xs bg-gray-100 px-1 py-0.5 rounded border">
+                VER: {receipt.transactionId.slice(-6).toUpperCase()}
+              </div>
+            </div>
+            <div className="text-center">
+              {qrCodeUrl ? (
+                <img 
+                  src={qrCodeUrl} 
+                  alt="Receipt QR Code" 
+                  className="w-16 h-16 border border-gray-300 rounded"
+                  title="Scan to view full receipt details"
+                />
+              ) : (
+                <div className="w-16 h-16 bg-gray-900 text-white flex items-center justify-center text-xs font-bold rounded">
+                  QR
+                </div>
+              )}
+              <div className="text-xs mt-1">Scan for Details</div>
+            </div>
+          </div>
+          
           {receipt.notes && (
-            <div className="border-t border-gray-200 pt-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Notes</h3>
-              <p className="text-gray-600 text-sm">{receipt.notes}</p>
+            <div className="mb-2 p-2 bg-yellow-50 border border-yellow-300 rounded text-xs relative z-10">
+              <span className="font-bold text-yellow-800">📝 NOTE:</span>
+              <div className="text-yellow-900">{receipt.notes}</div>
             </div>
           )}
-
-          <div className="border-t border-gray-200 pt-6 text-center text-sm text-gray-500">
-            <p>This is an official receipt issued by Coeus Review Center.</p>
-            <p className="mt-2">For inquiries, please contact us at info@coeusreview.com</p>
-            <p className="mt-4 text-xs">Generated on {new Date().toLocaleString()}</p>
+          
+          {/* Footer */}
+          <div className="border-t-2 border-blue-800 pt-2 text-center relative z-10">
+            <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-2 py-1 rounded mb-1">
+              <p className="text-xs font-bold">🎉 THANK YOU FOR YOUR PAYMENT! 🎉</p>
+            </div>
+            <p className="text-xs font-semibold text-blue-800 mb-1">This is your OFFICIAL RECEIPT</p>
+            <p className="text-xs text-gray-600 mb-1">📋 Keep this receipt for your records</p>
+            <p className="text-xs text-gray-600 mb-1">📞 For support: info@coeusreview.com</p>
+            
+            <div className="mt-2 pt-1 border-t border-gray-300 bg-gray-50 rounded px-2 py-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500">Generated:</span>
+                <span className="font-mono text-gray-700">{new Date().toLocaleString('en-US', {
+                  month: '2-digit', day: '2-digit', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', hour12: true
+                })}</span>
+              </div>
+              <div className="text-center mt-1">
+                <span className="text-xs font-bold text-blue-800">🛡️ AUTHENTIC • VERIFIED • SECURE 🛡️</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

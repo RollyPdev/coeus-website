@@ -70,11 +70,17 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, status } = await request.json();
+    const { id, status, purpose, remarks, validUntil } = await request.json();
+    
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (purpose) updateData.purpose = purpose;
+    if (remarks !== undefined) updateData.remarks = remarks;
+    if (validUntil) updateData.validUntil = new Date(validUntil);
     
     const updatedGoodMoral = await prisma.goodMoral.update({
       where: { id },
-      data: { status },
+      data: updateData,
       include: {
         student: {
           select: {
@@ -91,6 +97,32 @@ export async function PATCH(request: Request) {
     console.error('Error updating good moral certificate:', error);
     return NextResponse.json(
       { error: 'Failed to update good moral certificate' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Certificate ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    await prisma.goodMoral.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting good moral certificate:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete good moral certificate' },
       { status: 500 }
     );
   }

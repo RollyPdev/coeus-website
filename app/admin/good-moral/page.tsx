@@ -34,12 +34,17 @@ export default function GoodMoralPage() {
   const [certificates, setCertificates] = useState<GoodMoralCertificate[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [showIssueModal, setShowIssueModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCertificate, setEditingCertificate] = useState<GoodMoralCertificate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [issuing, setIssuing] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentSearch, setStudentSearch] = useState('');
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [selectedCertificates, setSelectedCertificates] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCertificates();
@@ -120,6 +125,99 @@ export default function GoodMoralPage() {
     }
   };
 
+  const handleEditCertificate = (cert: GoodMoralCertificate) => {
+    setEditingCertificate(cert);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateCertificate = async (id: string, data: any) => {
+    try {
+      const response = await fetch(`/api/admin/good-moral/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (response.ok) {
+        await fetchCertificates();
+        setShowEditModal(false);
+        setEditingCertificate(null);
+      }
+    } catch (error) {
+      console.error('Error updating certificate:', error);
+    }
+  };
+
+  const handleDeleteCertificate = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this certificate? This action cannot be undone.')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/good-moral/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await fetchCertificates();
+      }
+    } catch (error) {
+      console.error('Error deleting certificate:', error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedCertificates.length} certificate(s)?`)) return;
+    
+    try {
+      const deletePromises = selectedCertificates.map(id => 
+        fetch(`/api/admin/good-moral/${id}`, { method: 'DELETE' })
+      );
+      
+      await Promise.all(deletePromises);
+      setSelectedCertificates([]);
+      await fetchCertificates();
+    } catch (error) {
+      console.error('Error deleting certificates:', error);
+    }
+  };
+
+  const handleSelectCertificate = (id: string) => {
+    setSelectedCertificates(prev => 
+      prev.includes(id) ? prev.filter(certId => certId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCertificates.length === filteredCertificates.length) {
+      setSelectedCertificates([]);
+    } else {
+      setSelectedCertificates(filteredCertificates.map(cert => cert.id));
+    }
+  };
+
+  const exportCertificates = () => {
+    const csvContent = [
+      ['Certificate Number', 'Student Name', 'Student ID', 'Purpose', 'Status', 'Issued Date', 'Valid Until', 'Issued By'],
+      ...filteredCertificates.map(cert => [
+        cert.certificateNumber,
+        `${cert.student.firstName} ${cert.student.lastName}`,
+        cert.student.studentId,
+        cert.purpose,
+        cert.status,
+        new Date(cert.issuedDate).toLocaleDateString(),
+        new Date(cert.validUntil).toLocaleDateString(),
+        cert.issuedBy
+      ])
+    ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `good-moral-certificates-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handlePrintCertificate = (cert: GoodMoralCertificate) => {
     window.open(`/api/admin/good-moral/print/${cert.id}`, '_blank');
   };
@@ -133,11 +231,17 @@ export default function GoodMoralPage() {
     student.studentId.toLowerCase().includes(studentSearch.toLowerCase())
   ) : [];
 
-  const filteredCertificates = certificates.filter(cert =>
-    `${cert.student.firstName} ${cert.student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cert.certificateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cert.student.studentId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCertificates = certificates.filter(cert => {
+    const matchesSearch = `${cert.student.firstName} ${cert.student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cert.certificateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cert.student.studentId.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || cert.status === statusFilter;
+    
+    const matchesDate = !dateFilter || new Date(cert.issuedDate).toISOString().split('T')[0] === dateFilter;
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden">
@@ -177,7 +281,10 @@ export default function GoodMoralPage() {
               <p className="text-gray-600 mt-1">Issue and manage good moral certificates for students</p>
             </div>
             <div className="mt-4 sm:mt-0 flex space-x-3">
-              <button className="inline-flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium text-gray-700 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 shadow-lg hover:shadow-xl transition-all duration-300">
+              <button 
+                onClick={exportCertificates}
+                className="inline-flex items-center px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium text-gray-700 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
                 <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -315,6 +422,29 @@ export default function GoodMoralPage() {
                 />
               </div>
             </div>
+            
+            {/* Bulk Actions */}
+            {selectedCertificates.length > 0 && (
+              <div className="mt-4 p-3 bg-amber-50 rounded-md flex items-center justify-between">
+                <span className="text-sm text-amber-700">
+                  {selectedCertificates.length} certificate(s) selected
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                  >
+                    Delete Selected
+                  </button>
+                  <button
+                    onClick={() => setSelectedCertificates([])}
+                    className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Enhanced Table */}
@@ -322,6 +452,14 @@ export default function GoodMoralPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={selectedCertificates.length === filteredCertificates.length && filteredCertificates.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center space-x-1">
                       <span>Certificate Details</span>
@@ -379,7 +517,18 @@ export default function GoodMoralPage() {
                   </tr>
                 ) : (
                   filteredCertificates.map((cert, index) => (
-                    <tr key={cert.id} className="hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all duration-200 group">
+                    <tr key={cert.id} className={`hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all duration-200 group ${
+                      selectedCertificates.includes(cert.id) ? 'bg-amber-50' : ''
+                    }`}>
+                      {/* Checkbox */}
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedCertificates.includes(cert.id)}
+                          onChange={() => handleSelectCertificate(cert.id)}
+                          className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                        />
+                      </td>
                       {/* Certificate Details */}
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
@@ -505,11 +654,22 @@ export default function GoodMoralPage() {
                             </svg>
                           </button>
                           
+                          {/* Edit */}
+                          <button 
+                            onClick={() => handleEditCertificate(cert)}
+                            className="inline-flex items-center p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-all duration-200"
+                            title="Edit Certificate"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          
                           {/* Revoke (only for active certificates) */}
                           {cert.status === 'active' && (
                             <button 
                               onClick={() => handleRevokeCertificate(cert.id)}
-                              className="inline-flex items-center p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              className="inline-flex items-center p-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-lg transition-all duration-200"
                               title="Revoke Certificate"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -517,6 +677,17 @@ export default function GoodMoralPage() {
                               </svg>
                             </button>
                           )}
+                          
+                          {/* Delete */}
+                          <button 
+                            onClick={() => handleDeleteCertificate(cert.id)}
+                            className="inline-flex items-center p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title="Delete Certificate"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -691,6 +862,129 @@ export default function GoodMoralPage() {
                   ) : (
                     'Issue Certificate'
                   )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Certificate Modal */}
+      {showEditModal && editingCertificate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md border border-white/20 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                Edit Certificate
+              </h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingCertificate(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              handleUpdateCertificate(editingCertificate.id, {
+                purpose: formData.get('purpose') as string,
+                remarks: formData.get('remarks') as string || undefined,
+                validUntil: formData.get('validUntil') as string,
+                status: formData.get('status') as string
+              });
+            }}>
+              {/* Student Info (Read-only) */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Student</label>
+                <input
+                  type="text"
+                  value={`${editingCertificate.student.firstName} ${editingCertificate.student.lastName} (${editingCertificate.student.studentId})`}
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed"
+                />
+              </div>
+
+              {/* Purpose */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+                <select
+                  name="purpose"
+                  defaultValue={editingCertificate.purpose}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white/70 backdrop-blur-sm"
+                >
+                  <option value="For Board Exam Purposes">For Board Exam Purposes</option>
+                  <option value="Employment">Employment</option>
+                  <option value="School Transfer">School Transfer</option>
+                  <option value="Scholarship Application">Scholarship Application</option>
+                  <option value="College Application">College Application</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Status */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  name="status"
+                  defaultValue={editingCertificate.status}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white/70 backdrop-blur-sm"
+                >
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="revoked">Revoked</option>
+                </select>
+              </div>
+
+              {/* Valid Until */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Valid Until</label>
+                <input
+                  type="date"
+                  name="validUntil"
+                  defaultValue={new Date(editingCertificate.validUntil).toISOString().split('T')[0]}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white/70 backdrop-blur-sm"
+                />
+              </div>
+
+              {/* Remarks */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                <textarea
+                  name="remarks"
+                  rows={3}
+                  defaultValue={editingCertificate.remarks || ''}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white/70 backdrop-blur-sm resize-none"
+                  placeholder="Additional notes or remarks..."
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingCertificate(null);
+                  }}
+                  className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl hover:from-amber-700 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-200"
+                >
+                  Update Certificate
                 </button>
               </div>
             </form>

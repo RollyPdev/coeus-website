@@ -1,23 +1,43 @@
-/* Override styles for receipt generation */
-.receipt-container {
-  background-color: white !important;
-  padding: 20px !important;
-  box-shadow: none !important;
+/* Professional Business Receipt Styles */
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  #receipt-content {
+    width: 105mm !important;
+    min-height: 74mm !important;
+    margin: 0 !important;
+    padding: 8mm !important;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
 }
 
+/* Receipt container styles */
+.receipt-container {
+  background-color: white !important;
+  font-family: 'Courier New', monospace !important;
+  color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* Ensure proper text rendering */
 .receipt-container * {
-  /* Force standard colors for html2canvas */
   background-image: none !important;
   color-adjust: exact !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
 
-/* Ensure text is rendered properly */
-.receipt-container .text-blue-900 {
-  color: #1e3a8a !important;
-}
-
+/* Professional color scheme */
 .receipt-container .text-blue-800 {
   color: #1e40af !important;
 }
@@ -26,28 +46,55 @@
   color: #1d4ed8 !important;
 }
 
-.receipt-container .text-gray-500 {
-  color: #6b7280 !important;
+.receipt-container .text-gray-900 {
+  color: #111827 !important;
 }
 
 .receipt-container .text-gray-600 {
   color: #4b5563 !important;
 }
 
-.receipt-header {
-  background-color: #1e3a8a !important;
+.receipt-container .text-gray-500 {
+  color: #6b7280 !important;
 }
 
-.receipt-divider {
-  background-color: #3b82f6 !important;
+.receipt-container .bg-blue-800 {
+  background-color: #1e40af !important;
+  color: white !important;
 }
 
-.verification-code {
-  background-color: #1e3a8a !important;
+.receipt-container .bg-green-200 {
+  background-color: #bbf7d0 !important;
 }
 
-/* Force solid colors for any gradients */
-[class*="bg-gradient"] {
-  background-image: none !important;
-  background-color: #1e3a8a !important;
+.receipt-container .bg-yellow-200 {
+  background-color: #fef3c7 !important;
+}
+
+.receipt-container .bg-red-200 {
+  background-color: #fecaca !important;
+}
+
+.receipt-container .bg-gray-100 {
+  background-color: #f3f4f6 !important;
+}
+
+/* Border styles */
+.receipt-container .border-gray-300 {
+  border-color: #d1d5db !important;
+}
+
+.receipt-container .border-gray-400 {
+  border-color: #9ca3af !important;
+}
+
+/* Compact layout adjustments */
+.receipt-container .break-all {
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+/* Ensure monospace fonts for numbers */
+.receipt-container .font-mono {
+  font-family: 'Courier New', 'Monaco', monospace !important;
 } 

@@ -35,6 +35,7 @@ export default function LecturerForm({
   const [formData, setFormData] = useState(lecturer);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     lecturer.photo && lecturer.photo.startsWith('data:') ? lecturer.photo : null
@@ -48,6 +49,28 @@ export default function LecturerForm({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.position.trim()) errors.position = 'Position is required';
+    if (!formData.credentials.trim()) errors.credentials = 'Credentials are required';
+    if (!formData.bio.trim()) errors.bio = 'Biography is required';
+    if (!formData.specialization.trim()) errors.specialization = 'Specialization is required';
+    if (!formData.subjects.trim()) errors.subjects = 'Subjects are required';
+    
+    if (formData.name.length > 100) errors.name = 'Name must be less than 100 characters';
+    if (formData.bio.length > 1000) errors.bio = 'Biography must be less than 1000 characters';
+    
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,8 +140,15 @@ export default function LecturerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      setError('Please fix the errors below');
+      return;
+    }
+    
     setIsSubmitting(true);
     setError("");
+    setFieldErrors({});
 
     try {
       // Get auth token
@@ -200,9 +230,14 @@ export default function LecturerForm({
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              fieldErrors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            }`}
             required
           />
+          {fieldErrors.name && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+          )}
         </div>
 
         <div>
@@ -298,9 +333,14 @@ export default function LecturerForm({
             name="position"
             value={formData.position}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              fieldErrors.position ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            }`}
             required
           />
+          {fieldErrors.position && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.position}</p>
+          )}
         </div>
 
         <div>
@@ -316,9 +356,14 @@ export default function LecturerForm({
             name="credentials"
             value={formData.credentials}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              fieldErrors.credentials ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            }`}
             required
           />
+          {fieldErrors.credentials && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.credentials}</p>
+          )}
         </div>
 
         <div>
@@ -334,9 +379,14 @@ export default function LecturerForm({
             name="specialization"
             value={formData.specialization}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              fieldErrors.specialization ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+            }`}
             required
           />
+          {fieldErrors.specialization && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.specialization}</p>
+          )}
         </div>
 
         <div>
@@ -374,9 +424,15 @@ export default function LecturerForm({
           name="subjects"
           value={formData.subjects}
           onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            fieldErrors.subjects ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+          }`}
+          placeholder="e.g., Criminal Law, Criminology, Ethics"
           required
         />
+        {fieldErrors.subjects && (
+          <p className="mt-1 text-sm text-red-600">{fieldErrors.subjects}</p>
+        )}
       </div>
 
       <div>
@@ -392,9 +448,20 @@ export default function LecturerForm({
           rows={5}
           value={formData.bio}
           onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            fieldErrors.bio ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+          }`}
+          placeholder="Brief biography and teaching experience..."
           required
         ></textarea>
+        <div className="flex justify-between items-center mt-1">
+          {fieldErrors.bio && (
+            <p className="text-sm text-red-600">{fieldErrors.bio}</p>
+          )}
+          <p className="text-sm text-gray-500 ml-auto">
+            {formData.bio.length}/1000 characters
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end space-x-4">

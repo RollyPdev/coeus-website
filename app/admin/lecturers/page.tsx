@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import LecturerStats from "@/components/admin/LecturerStats";
+import LecturerImport from "@/components/admin/LecturerImport";
 
 interface Lecturer {
   id: string;
@@ -19,6 +21,11 @@ export default function LecturersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [selectedLecturers, setSelectedLecturers] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'category' | 'createdAt'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     fetchLecturers();
@@ -43,15 +50,99 @@ export default function LecturersPage() {
     }
   };
 
-  const filteredLecturers = lecturers.filter(lecturer => {
-    const matchesSearch = lecturer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lecturer.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lecturer.specialization.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = filterCategory === "all" || lecturer.category === filterCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const handleSelectLecturer = (lecturerId: string) => {
+    setSelectedLecturers(prev => 
+      prev.includes(lecturerId) 
+        ? prev.filter(id => id !== lecturerId)
+        : [...prev, lecturerId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedLecturers.length === filteredLecturers.length) {
+      setSelectedLecturers([]);
+    } else {
+      setSelectedLecturers(filteredLecturers.map(l => l.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedLecturers.length} lecturer(s)?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        return;
+      }
+
+      const deletePromises = selectedLecturers.map(id => 
+        fetch(`/api/lecturers/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      );
+
+      await Promise.all(deletePromises);
+      setSelectedLecturers([]);
+      fetchLecturers();
+    } catch (error) {
+      setError('Failed to delete selected lecturers');
+    }
+  };
+
+  const exportLecturers = () => {
+    const csvContent = [
+      ['Name', 'Position', 'Category', 'Specialization', 'Credentials', 'Subjects'],
+      ...filteredLecturers.map(l => [
+        l.name,
+        l.position,
+        l.category,
+        l.specialization,
+        l.credentials || '',
+        l.subjects || ''
+      ])
+    ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lecturers-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredLecturers = lecturers
+    .filter(lecturer => {
+      const matchesSearch = lecturer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           lecturer.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           lecturer.specialization.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = filterCategory === "all" || lecturer.category === filterCategory;
+      
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+      
+      if (sortBy === 'createdAt') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      } else {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
@@ -160,17 +251,31 @@ export default function LecturersPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Lecturers ({filteredLecturers.length})</h1>
-        <Link
-          href="/admin/lecturers/new"
-          className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors"
-        >
-          Add New Lecturer
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Import
+          </button>
+          <Link
+            href="/admin/lecturers/new"
+            className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors"
+          >
+            Add New Lecturer
+          </Link>
+        </div>
       </div>
+
+      {/* Statistics */}
+      <LecturerStats />
 
       {/* Search and Filter Section */}
       <div className="mb-6 bg-white rounded-lg shadow-md p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <input
               type="text"
@@ -180,7 +285,7 @@ export default function LecturersPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div>
+          <div className="flex gap-2">
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
@@ -191,8 +296,55 @@ export default function LecturersPage() {
               <option value="nursing">Nursing</option>
               <option value="cpd">CPD</option>
             </select>
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [field, order] = e.target.value.split('-');
+                setSortBy(field as 'name' | 'category' | 'createdAt');
+                setSortOrder(order as 'asc' | 'desc');
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="name-asc">Name A-Z</option>
+              <option value="name-desc">Name Z-A</option>
+              <option value="category-asc">Category A-Z</option>
+              <option value="createdAt-desc">Newest First</option>
+              <option value="createdAt-asc">Oldest First</option>
+            </select>
+            <button
+              onClick={exportLecturers}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export
+            </button>
           </div>
         </div>
+        
+        {/* Bulk Actions */}
+        {selectedLecturers.length > 0 && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-md flex items-center justify-between">
+            <span className="text-sm text-blue-700">
+              {selectedLecturers.length} lecturer(s) selected
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={handleBulkDelete}
+                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+              >
+                Delete Selected
+              </button>
+              <button
+                onClick={() => setSelectedLecturers([])}
+                className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {filteredLecturers.length === 0 ? (
@@ -224,6 +376,14 @@ export default function LecturersPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={selectedLecturers.length === filteredLecturers.length && filteredLecturers.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -242,7 +402,17 @@ export default function LecturersPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredLecturers.map((lecturer) => (
-                  <tr key={lecturer.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={lecturer.id} className={`hover:bg-gray-50 transition-colors ${
+                    selectedLecturers.includes(lecturer.id) ? 'bg-blue-50' : ''
+                  }`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedLecturers.includes(lecturer.id)}
+                        onChange={() => handleSelectLecturer(lecturer.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
@@ -312,6 +482,17 @@ export default function LecturersPage() {
             </table>
           </div>
         </div>
+      )}
+      
+      {/* Import Modal */}
+      {showImport && (
+        <LecturerImport
+          onImportComplete={() => {
+            fetchLecturers();
+            setShowImport(false);
+          }}
+          onClose={() => setShowImport(false)}
+        />
       )}
     </div>
   );
