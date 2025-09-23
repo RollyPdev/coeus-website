@@ -3,11 +3,12 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const certificate = await prisma.goodMoral.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         student: {
           include: {
@@ -425,7 +426,7 @@ export async function GET(
           <img src="/logo.png" alt="Coeus Review Center Logo">
         </div>
         <div class="company-name">COEUS REVIEW AND TRAININGS SPECIALIST, INC.</div>
-        <div class="company-address">Brgy. Punta Tabuc, Roxas City, Capiz, Philippines</div>
+        <div class="company-address">CL Business Center, 2nd Floor, Highway, Brgy. Punta Tabuc, Roxas City, Capiz, Philippines</div>
         <div class="company-website">Website: coeus-incorporated.com</div>
         <div class="cert-title">CERTIFICATE OF GOOD MORAL CHARACTER</div>
       </div>
@@ -454,7 +455,10 @@ export async function GET(
         </div>
         
         <div class="signature-block">
-          <div class="signatory-name">MELQUIADES A. JOLO, RN, RM, LPT</div>
+          <div style="position: relative; display: inline-block;">
+            <img src="/ceo_signature.png" alt="CEO Signature" style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); width: 120px; height: 40px; z-index: 1; opacity: 0.8;" />
+            <div class="signatory-name" style="position: relative; z-index: 2;">MELQUIADES A. JOLO, RN, RM, LPT</div>
+          </div>
           <div class="signatory-title">CEO/President</div>
         </div>
       </div>
@@ -462,7 +466,7 @@ export async function GET(
       <!-- Footer Section -->
       <div class="footer">
         <div class="footer-company">COEUS REVIEW AND TRAININGS SPECIALIST, INC.</div>
-        <div class="footer-address">Brgy. Punta Tabuc, Roxas City, Capiz, Philippines</div>
+        <div class="footer-address">CL Business Center, 2nd Floor, Highway, Brgy. Punta Tabuc, Roxas City, Capiz, Philippines</div>
         <div class="footer-address">Website: coeus-incorporated.com</div>
         <div class="footer-disclaimer">This certificate is issued based on available student records and behavioral observations during the period of enrollment at our review center.</div>
   </div>
