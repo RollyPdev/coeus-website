@@ -1,6 +1,31 @@
 import React from 'react';
+import { Metadata } from 'next';
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+
+export const metadata: Metadata = {
+  title: 'About Us - Coeus Review & Training Specialist, Inc.',
+  description: 'Learn about Coeus Review & Training Specialist, Inc. - our vision, mission, history, and leadership team. Founded in 2013, we are committed to excellence in professional education.',
+  openGraph: {
+    title: 'About Coeus Review & Training Specialist, Inc.',
+    description: 'Discover our story, leadership team, and commitment to excellence in professional education since 2013.',
+    url: 'https://coeus-incorporated.com/about',
+    images: [
+      {
+        url: 'https://coeus-incorporated.com/image-1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Coeus Review Center About Us',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About Coeus Review & Training Specialist, Inc.',
+    description: 'Learn about our journey of excellence in professional education since 2013.',
+    images: ['https://coeus-incorporated.com/image-1.jpg'],
+  },
+};
 
 // Sample data - replace with actual data
 const boardMembers = [

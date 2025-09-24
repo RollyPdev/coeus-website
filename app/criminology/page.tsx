@@ -1,7 +1,33 @@
 import React from 'react';
+import { Metadata } from 'next';
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import CriminologySection from "../../components/CriminologySection";
+
+export const metadata: Metadata = {
+  title: 'Criminology Review Program - Coeus Review & Training Specialist, Inc.',
+  description: 'Comprehensive Criminology review program for the Criminologist Licensure Examination. Expert lecturers, proven track record, and high passing rates.',
+  keywords: ['criminology review', 'criminologist board exam', 'licensure examination', 'review center', 'Roxas City'],
+  openGraph: {
+    title: 'Criminology Review Program - High Passing Rates',
+    description: 'Join our comprehensive Criminology review program with expert lecturers and proven success in board examinations.',
+    url: 'https://coeus-incorporated.com/criminology',
+    images: [
+      {
+        url: 'https://coeus-incorporated.com/image-1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Criminology Review Program',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Criminology Review Program - Coeus Review Center',
+    description: 'Comprehensive preparation for the Criminologist Licensure Examination with high passing rates.',
+    images: ['https://coeus-incorporated.com/image-1.jpg'],
+  },
+};
 
 export default function CriminologyPage() {
   return (

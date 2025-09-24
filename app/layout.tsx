@@ -30,13 +30,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://coeusreview.com",
+    url: "https://coeus-incorporated.com",
     siteName: "Coeus Review & Training Specialist, Inc.",
     title: "Premier Review Center for Criminology and Nursing in Roxas City",
     description: "Achieve your professional goals with our comprehensive review programs and expert instructors. High passing rates for board exams.",
     images: [
       {
-        url: "https://coeusreview.com/images/og-image.jpg",
+        url: "https://coeus-incorporated.com/image-1.jpg",
         width: 1200,
         height: 630,
         alt: "Coeus Review Center",
@@ -47,10 +47,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Coeus Review & Training Specialist, Inc.",
     description: "Leading review center for Criminology and Nursing board exams with proven track record of success.",
-    images: ["https://coeusreview.com/images/twitter-image.jpg"],
+    images: ["https://coeus-incorporated.com/image-1.jpg"],
   },
   alternates: {
-    canonical: "https://coeusreview.com",
+    canonical: "https://coeus-incorporated.com",
   },
   robots: {
     index: true,

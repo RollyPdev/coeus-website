@@ -1,8 +1,34 @@
 import React from 'react';
+import { Metadata } from 'next';
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import SeminarPreviewSection from "../../components/SeminarPreviewSection";
 import SeminarRegistrationSection from "../../components/SeminarRegistrationSection";
+
+export const metadata: Metadata = {
+  title: 'CPD Seminars - Continuing Professional Development | Coeus Review',
+  description: 'PRC-accredited CPD seminars for licensed professionals. Expert speakers, comprehensive materials, and convenient scheduling for your continuing education needs.',
+  keywords: ['CPD seminars', 'continuing professional development', 'PRC accredited', 'professional education', 'licensed professionals'],
+  openGraph: {
+    title: 'CPD Seminars - Professional Development Programs',
+    description: 'Join our PRC-accredited CPD seminars with expert speakers and comprehensive learning materials.',
+    url: 'https://coeus-incorporated.com/cpd',
+    images: [
+      {
+        url: 'https://coeus-incorporated.com/image-1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'CPD Seminars - Professional Development',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CPD Seminars - Coeus Review & Training',
+    description: 'PRC-accredited continuing professional development seminars for licensed professionals.',
+    images: ['https://coeus-incorporated.com/image-1.jpg'],
+  },
+};
 
 export default function CPDPage() {
   return (

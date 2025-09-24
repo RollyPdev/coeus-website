@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://coeusreview.com/sitemap.xml
+Sitemap: https://coeus-incorporated.com/sitemap.xml

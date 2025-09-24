@@ -1,10 +1,10 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-  siteUrl: 'https://coeusreview.com',
+  siteUrl: 'https://coeus-incorporated.com',
   generateRobotsTxt: true,
   robotsTxtOptions: {
     additionalSitemaps: [
-      'https://coeusreview.com/sitemap.xml',
+      'https://coeus-incorporated.com/sitemap.xml',
     ],
     policies: [
       {
