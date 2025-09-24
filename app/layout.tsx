@@ -36,16 +36,16 @@ export const metadata: Metadata = {
     description: "Achieve your professional goals with our comprehensive review programs and expert instructors. High passing rates for board exams.",
     images: [
       {
-        url: "https://coeus-incorporated.com/logo.png",
+        url: "https://coeus-incorporated.com/image-1.jpg",
         width: 1200,
         height: 630,
         alt: "Coeus Review Center",
-        type: "image/png",
+        type: "image/jpeg",
       },
     ],
   },
   other: {
-    'og:image:secure_url': 'https://coeus-incorporated.com/logo.png',
+    'og:image:secure_url': 'https://coeus-incorporated.com/image-1.jpg',
     'facebook-domain-verification': '2wdc72q09jt0v57ztn356im317ndpy',
   },
   twitter: {
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     description: "Leading review center for Criminology and Nursing board exams with proven track record of success.",
     images: [
       {
-        url: "https://coeus-incorporated.com/logo.png",
+        url: "https://coeus-incorporated.com/image-1.jpg",
         width: 1200,
         height: 630,
         alt: "Coeus Review Center",
