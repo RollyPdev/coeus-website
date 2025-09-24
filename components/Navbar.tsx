@@ -78,7 +78,32 @@ const Navbar = () => {
                 <a href="#lecturers" className="block px-4 py-2 hover:bg-blue-50 rounded-b-lg">Review Lecturers</a>
               </div>
             </div>
-            <Link href="/students" className="hover:text-blue-700 font-medium transition-colors">Students</Link>
+            <div className="relative group">
+              <button className="hover:text-blue-700 font-medium transition-colors flex items-center">
+                Students
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <Link href="/students" className="block px-4 py-2 hover:bg-blue-50 rounded-t-lg">Student Portal</Link>
+                <div className="relative group/services">
+                  <button className="w-full text-left px-4 py-2 hover:bg-blue-50 flex items-center justify-between">
+                    Student Services
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  <div className="absolute left-full top-0 ml-1 w-48 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover/services:opacity-100 group-hover/services:visible transition-all duration-300 z-50">
+                    <Link href="/enroll" className="block px-4 py-2 hover:bg-blue-50 rounded-t-lg">Enroll Now</Link>
+                    <Link href="/student-status" className="block px-4 py-2 hover:bg-blue-50">Check Status</Link>
+                    <Link href="/attendance" className="block px-4 py-2 hover:bg-blue-50">Mark Attendance</Link>
+                    <Link href="/upload-photo" className="block px-4 py-2 hover:bg-blue-50 rounded-b-lg">Upload Photo</Link>
+                  </div>
+                </div>
+                <Link href="/verify-receipt" className="block px-4 py-2 hover:bg-blue-50 rounded-b-lg">Verify Receipt</Link>
+              </div>
+            </div>
             <Link href="/about" className="hover:text-blue-700 font-medium transition-colors">About Us</Link>
             <Link href="/attendance" className="hover:text-green-700 font-medium transition-colors flex items-center">
               <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,10 +138,10 @@ const Navbar = () => {
       </div>
       
       {/* Mobile menu */}
-      <div className={`md:hidden fixed inset-0 z-40 bg-white transform transition-transform duration-300 ease-in-out ${
+      <div className={`md:hidden fixed top-16 left-0 right-0 bottom-0 z-40 bg-white transform transition-transform duration-300 ease-in-out ${
         mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-      }`} style={{ top: '60px' }}>
-        <div className="px-4 pt-2 pb-4 space-y-1 h-full overflow-y-auto">
+      }`}>
+        <div className="px-4 pt-4 pb-4 space-y-2 h-full overflow-y-auto safe-area-inset">
           <Link href="/" onClick={closeMobileMenu} className="block py-2 hover:text-blue-700">Home</Link>
           
           <div className="py-2">
@@ -141,14 +166,26 @@ const Navbar = () => {
             </div>
           </div>
           
-          <Link href="/students" onClick={closeMobileMenu} className="block py-2 hover:text-blue-700">Students</Link>
+          <div className="py-2">
+            <div className="flex justify-between items-center hover:text-blue-700">
+              <span>Students</span>
+            </div>
+            <div className="pl-4 mt-1 space-y-1">
+              <Link href="/students" onClick={closeMobileMenu} className="block py-1 text-sm text-gray-600 hover:text-blue-700">Student Portal</Link>
+              <div className="py-1">
+                <div className="text-sm text-gray-800 font-medium mb-1">Student Services</div>
+                <div className="pl-3 space-y-1">
+                  <Link href="/enroll" onClick={closeMobileMenu} className="block py-1 text-xs text-gray-600 hover:text-blue-700">Enroll Now</Link>
+                  <Link href="/student-status" onClick={closeMobileMenu} className="block py-1 text-xs text-gray-600 hover:text-blue-700">Check Status</Link>
+                  <Link href="/attendance" onClick={closeMobileMenu} className="block py-1 text-xs text-gray-600 hover:text-blue-700">Mark Attendance</Link>
+                  <Link href="/upload-photo" onClick={closeMobileMenu} className="block py-1 text-xs text-gray-600 hover:text-blue-700">Upload Photo</Link>
+                </div>
+              </div>
+              <Link href="/verify-receipt" onClick={closeMobileMenu} className="block py-1 text-sm text-gray-600 hover:text-blue-700">Verify Receipt</Link>
+            </div>
+          </div>
           <Link href="/about" onClick={closeMobileMenu} className="block py-2 hover:text-blue-700">About Us</Link>
-          <Link href="/attendance" onClick={closeMobileMenu} className="block py-2 hover:text-green-700 flex items-center">
-            <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            Mark Attendance
-          </Link>
+
           <div className="pt-2">
             <button 
               onClick={() => { closeMobileMenu(); window.location.href = '/enroll'; }}
@@ -165,7 +202,6 @@ const Navbar = () => {
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
           onClick={closeMobileMenu}
-          style={{ top: '60px' }}
         ></div>
       )}
     </nav>

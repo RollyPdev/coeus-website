@@ -127,6 +127,7 @@
     @apply bg-background text-foreground;
     background-image: none !important;
     transition: background-color 0.2s ease;
+    overflow-x: hidden;
   }
   
   /* Ensure page backgrounds are contained and prevent flashing */
@@ -159,16 +160,16 @@
     min-height: calc(100vh - 80px);
   }
   h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl;
   }
   h2 {
-    @apply text-3xl md:text-4xl;
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
   }
   h3 {
-    @apply text-2xl md:text-3xl;
+    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl;
   }
   h4 {
-    @apply text-xl md:text-2xl;
+    @apply text-base sm:text-lg md:text-xl lg:text-2xl;
   }
   a {
     @apply transition-colors duration-200;
@@ -210,9 +211,51 @@
   animation: scale-up 0.3s ease-out forwards;
 }
 
-/* Smooth scrolling */
+/* Smooth scrolling and mobile fixes */
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Mobile viewport fixes */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+  
+  /* Fix mobile menu positioning */
+  .mobile-menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+  }
+  
+  /* Prevent horizontal scroll */
+  body, html {
+    overflow-x: hidden;
+    width: 100%;
+  }
+  
+  /* Mobile text adjustments */
+  .mobile-text-sm {
+    @apply text-sm;
+  }
+  
+  .mobile-text-base {
+    @apply text-base;
+  }
+  
+  /* Mobile spacing */
+  .mobile-py-4 {
+    @apply py-4;
+  }
+  
+  .mobile-px-4 {
+    @apply px-4;
+  }
 }
 
 /* Custom scrollbar */

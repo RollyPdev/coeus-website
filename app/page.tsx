@@ -6,6 +6,7 @@ import PhotoSlider from "../components/PhotoSlider";
 import AnimatedLogoSection from "../components/AnimatedLogoSection";
 import ProgramsSection from "../components/ProgramsSection";
 import ReviewLecturersSection from "../components/ReviewLecturersSection";
+import BoardPassersSection from "../components/BoardPassersSection";
 import TestimonialsSection from "../components/TestimonialsSection";
 import AboutCEOSection from "../components/AboutCEOSection";
 import ContactSection from "../components/ContactSection";
@@ -41,7 +42,7 @@ export default function Home() {
         <PhotoSlider />
         
         {/* About Section with animated logo */}
-        <section className="py-20 bg-white relative overflow-hidden" id="about-intro">
+        <section className="py-12 sm:py-16 lg:py-20 bg-white relative overflow-hidden" id="about-intro">
           {/* Background image with blur */}
           <div className="absolute inset-0 w-full h-full z-0">
             <img 
@@ -54,14 +55,14 @@ export default function Home() {
             <div className="absolute inset-0 bg-white opacity-70" />
           </div>
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-              <div className="lg:w-1/2">
-                <h2 className="text-3xl md:text-4xl font-bold mb-6 text-blue-900">Coeus Review & Training Specialist, Inc.</h2>
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
+              <div className="lg:w-1/2 text-center lg:text-left">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-blue-900">Coeus Review & Training Specialist, Inc.</h2>
                 <div className="w-20 h-1 bg-blue-600 mb-6"></div>
-                <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                <p className="text-base sm:text-lg text-gray-700 mb-4 sm:mb-6 leading-relaxed">
                   We are dedicated to providing high-quality review programs and professional development seminars to help you achieve your career goals and aspirations.
                 </p>
-                <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+                <p className="text-base sm:text-lg text-gray-700 mb-6 sm:mb-8 leading-relaxed">
                   With our team of expert lecturers and comprehensive study materials, we ensure that you are well-prepared for your licensure examinations and professional growth.
                 </p>
                 <a 
@@ -84,9 +85,9 @@ export default function Home() {
         </section>
         
         {/* Stats Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white relative overflow-hidden">
-          {/* Animated background elements */}
-          <div className="absolute inset-0 opacity-10">
+        <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white relative overflow-hidden">
+          {/* Animated background elements - hidden on mobile */}
+          <div className="absolute inset-0 opacity-10 hidden sm:block">
             <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
             <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
             <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
@@ -94,22 +95,22 @@ export default function Home() {
           </div>
           
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fade-in-up">Our Achievements</h2>
-              <div className="w-24 h-1 bg-white mx-auto animate-fade-in-up" style={{animationDelay: '0.2s'}}></div>
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 animate-fade-in-up">Our Achievements</h2>
+              <div className="w-16 sm:w-24 h-1 bg-white mx-auto animate-fade-in-up" style={{animationDelay: '0.2s'}}></div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div className="p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
-                <div className="text-5xl mb-4 group-hover:animate-pulse">
-                  <svg className="w-12 h-12 text-yellow-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 text-center">
+              <div className="p-3 sm:p-4 lg:p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
+                <div className="text-3xl sm:text-4xl lg:text-5xl mb-2 sm:mb-4 group-hover:animate-pulse">
+                  <svg className="w-8 h-8 sm:w-10 h-10 lg:w-12 h-12 text-yellow-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                   </svg>
                 </div>
-                <div className="text-4xl font-bold mb-3 flex justify-center text-yellow-300">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-3 flex justify-center text-yellow-300">
                   <CounterAnimation end={2500} suffix="+" duration={3000} />
                 </div>
-                <div className="text-blue-200 font-medium">Students Trained</div>
+                <div className="text-blue-200 font-medium text-xs sm:text-sm lg:text-base">Students Trained</div>
               </div>
               
               <div className="p-6 transform transition-all duration-700 hover:scale-110 hover:bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 group">
@@ -176,6 +177,9 @@ export default function Home() {
         {/* Review Lecturers Section */}
         <ReviewLecturersSection />
         
+        {/* Board Passers Section */}
+        <BoardPassersSection />
+        
         {/* News & Events Section */}
         <NewsEventsSection />
         
@@ -186,11 +190,11 @@ export default function Home() {
         <AboutCEOSection />
         
         {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+        <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Your Journey?</h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">Join our review programs and take the first step towards achieving your professional goals.</p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6">Ready to Start Your Journey?</h2>
+            <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto">Join our review programs and take the first step towards achieving your professional goals.</p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
               <a 
                 href="/attendance" 
                 className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg flex items-center justify-center"
