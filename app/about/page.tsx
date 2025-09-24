@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     url: 'https://coeus-incorporated.com/about',
     images: [
       {
-        url: 'https://coeus-incorporated.com/image-1.jpg',
+        url: 'https://coeus-incorporated.com/logo.png',
         width: 1200,
         height: 630,
         alt: 'Coeus Review Center About Us',
@@ -23,7 +23,14 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'About Coeus Review & Training Specialist, Inc.',
     description: 'Learn about our journey of excellence in professional education since 2013.',
-    images: ['https://coeus-incorporated.com/image-1.jpg'],
+    images: [
+      {
+        url: 'https://coeus-incorporated.com/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Coeus Review Center About Us',
+      },
+    ],
   },
 };
 

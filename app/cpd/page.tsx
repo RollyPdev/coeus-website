@@ -26,7 +26,14 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'CPD Seminars - Coeus Review & Training',
     description: 'PRC-accredited continuing professional development seminars for licensed professionals.',
-    images: ['https://coeus-incorporated.com/image-1.jpg'],
+    images: [
+      {
+        url: 'https://coeus-incorporated.com/image-1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'CPD Seminars - Professional Development',
+      },
+    ],
   },
 };
 

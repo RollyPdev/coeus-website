@@ -25,7 +25,14 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Criminology Review Program - Coeus Review Center',
     description: 'Comprehensive preparation for the Criminologist Licensure Examination with high passing rates.',
-    images: ['https://coeus-incorporated.com/image-1.jpg'],
+    images: [
+      {
+        url: 'https://coeus-incorporated.com/image-1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Criminology Review Program',
+      },
+    ],
   },
 };
 
