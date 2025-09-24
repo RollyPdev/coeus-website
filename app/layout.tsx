@@ -46,6 +46,7 @@ export const metadata: Metadata = {
   },
   other: {
     'og:image:secure_url': 'https://coeus-incorporated.com/logo.png',
+    'facebook-domain-verification': '2wdc72q09jt0v57ztn356im317ndpy',
   },
   twitter: {
     card: "summary_large_image",
@@ -75,6 +76,9 @@ export const metadata: Metadata = {
   },
   verification: {
     google: ["f8aa2903657b804d", "W8uVriLGV3Lf4fTpWvl3JQ-KcL3qpsEO29kLyPKDbRc"],
+    other: {
+      'facebook-domain-verification': '2wdc72q09jt0v57ztn356im317ndpy',
+    },
   },
 };
 
@@ -87,7 +91,6 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
-      
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body
