@@ -456,10 +456,9 @@ export async function GET(
         
         <div class="signature-block">
           <div style="position: relative; display: inline-block;">
-            <img src="/ceo_signature.png" alt="CEO Signature" style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); width: 120px; height: 40px; z-index: 1; opacity: 0.8;" />
-            <div class="signatory-name" style="position: relative; z-index: 2;">MELQUIADES A. JOLO, RN, RM, LPT</div>
+            <div class="signatory-name" style="position: relative; z-index: 2;">ROLLY ORTIZ PAREDES</div>
           </div>
-          <div class="signatory-title">CEO/President</div>
+          <div class="signatory-title">Review Program Coordinator</div>
         </div>
       </div>
       
